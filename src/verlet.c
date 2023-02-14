@@ -3,12 +3,13 @@
 #include <stdbool.h>
 
 #include "graphics.h"
+#include "simulation.h"
 
 
 int main(int argc, char* argv[]) {
 
     struct gui *gui = init_gui();
-    
+    simulation *sim = init_simulation();
     
     srand(time(NULL));
 
@@ -54,11 +55,12 @@ int main(int argc, char* argv[]) {
         }
 
 
-        render_simulation(gui);
+        render_simulation(gui, sim);
 
         render_gui(gui);
     }
 
+    destroy_simulation(sim);
     end_gui(gui);
 
     return EXIT_SUCCESS;
