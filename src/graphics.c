@@ -105,6 +105,9 @@ void render_simulation(struct gui *gui, simulation *sim){
     SDL_SetRenderDrawColor(gui->renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
     SDL_RenderClear(gui->renderer);
 
+    SDL_SetRenderDrawColor(gui->renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
+    draw_circle(gui->renderer, (int)(WINDOW_WIDTH/2), (int)(WINDOW_HEIGHT/2), (int)((WINDOW_HEIGHT-100)/2));
+
     for (size_t i = 0; i < sim->circle_count; i++)
     {
         verlet_circle *c = sim->circles + i;

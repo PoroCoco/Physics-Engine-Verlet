@@ -21,4 +21,6 @@ typedef struct verlet_circle {
 void update_position_circle(verlet_circle *c, float dt);
 void accelerate_circle(verlet_circle *c, vector *acc);
 
+float vector_length(vector v);
+
 #endif // _CIRCLE_VERLET_H__

@@ -19,11 +19,33 @@ void update_positions(simulation *sim, float dt){
     }
 }
 
+void apply_constraint(simulation *sim){
+    vector position = {.x = WINDOW_WIDTH/2, .y = WINDOW_HEIGHT/2};
+    float radius =  (WINDOW_HEIGHT-100)/2;
 
-void update_simulation(simulation *sim, float dt){
-    apply_gravity(sim);
-    update_positions(sim, dt);
+    for (size_t i = 0; i < sim->circle_count; i++)
+    {
+        verlet_circle *c = sim->circles + i;
+        vector to_circle;
+        to_circle.x = c->position_current.x - position.x;
+        to_circle.y = c->position_current.y - position.y;
+        float dist = vector_length(to_circle);
+
+        if ((int)dist > radius - c->radius){
+            vector n = {
+                .x = to_circle.x / dist,
+                .y = to_circle.y / dist
+            };
+            c->position_current.x = position.x + n.x *(dist - c->radius);
+            c->position_current.y = position.y + n.y *(dist - c->radius);
+        }
+        
+
+    }
+    
+
 }
+
 
 simulation *init_simulation(void){
     simulation *s = malloc(sizeof(simulation));
@@ -40,6 +62,12 @@ void destroy_simulation(simulation *s){
     if (!s) return;
     if (s->circles) free(s->circles);
     free(s);
+}
+
+void update_simulation(simulation *sim, float dt){
+    apply_gravity(sim);
+    update_positions(sim, dt);
+    apply_constraint(sim);
 }
 
 void add_circle(simulation *sim, uint radius, float px, float py, unsigned char red, unsigned char green, unsigned char blue, float acc_x, float acc_y){

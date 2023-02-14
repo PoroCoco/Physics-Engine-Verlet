@@ -1,8 +1,11 @@
 #include "circle_verlet.h"
+#include <math.h>
 
 
-/// @brief 
-/// @param c 
+float vector_length(vector v){
+    return sqrtf(powf(v.x, 2.0)+powf(v.y, 2.0));
+}
+
 void update_position_circle(verlet_circle *c, float dt){
     vector velocity;
     velocity.x = c->position_current.x - c->position_old.x;

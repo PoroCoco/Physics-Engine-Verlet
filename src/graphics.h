@@ -4,9 +4,6 @@
 #include <SDL2/SDL.h>
 #include "simulation.h"
 
-#define WINDOW_WIDTH 910
-#define WINDOW_HEIGHT 540
-
 
 struct gui{
     SDL_Renderer *renderer;
@@ -17,6 +14,7 @@ struct gui{
 struct gui* init_gui(void);
 void end_gui(struct gui *gui);
 void render_gui(struct gui *gui);
+
 /// @brief updates the gui's renderer with the circles in the simulation
 /// @param gui the gui to update
 /// @param sim the simulation with the informations
