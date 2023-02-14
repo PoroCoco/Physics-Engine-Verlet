@@ -13,7 +13,7 @@ int main(int argc, char* argv[]) {
     
     // add_circle(sim, CIRCLE_RADIUS, 400, 300, 0, 0, 255, 0, 0);
 
-    srand(time(NULL));
+    srand(6969);
 
     SDL_Event event;
     bool program_launched = true;
@@ -44,7 +44,7 @@ int main(int argc, char* argv[]) {
                     {
                     case SDLK_ESCAPE:
                         printf("Esc pressed, closing simulation\n");
-                        program_launched = SDL_FALSE;
+                        program_launched = false;
                         continue;
 
                     default:
@@ -53,7 +53,7 @@ int main(int argc, char* argv[]) {
                     break;
 
                 case SDL_QUIT:
-                    program_launched = SDL_FALSE;
+                    program_launched = false;
                     break;
 
                 default:
@@ -75,8 +75,11 @@ int main(int argc, char* argv[]) {
         float elapsedMS = (end_time - start_time) / freq_time*1000.0;
         float fps_delay = floor(16.666 - elapsedMS);
         if(fps_delay>0){
-            printf("freeze for %f\n", fps_delay);
+            // printf("freeze for %f\n", fps_delay);
             SDL_Delay(fps_delay);
+        }else if (fps_delay<-1){
+            // printf("%zu objects in simulation\n", sim->circle_count);
+            // program_launched = false;
         }
 
         if(frame_counter%60 == 0){
@@ -89,7 +92,6 @@ int main(int argc, char* argv[]) {
     destroy_simulation(sim);
     end_gui(gui);
 
-    button_mousedown = button_mousedown;
     argc = argc;
     argv = argv;
 
