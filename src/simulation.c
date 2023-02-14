@@ -64,11 +64,43 @@ void destroy_simulation(simulation *s){
     free(s);
 }
 
+void solve_collisions(simulation *sim){
+    for (size_t i = 0; i < sim->circle_count; i++)
+    {
+        verlet_circle *c1 = sim->circles + i;
+        for (size_t j = i+1; j < sim->circle_count; j++)
+        {
+            verlet_circle *c2 = sim->circles + j;
+            vector axis_collision = {
+                .x = c1->position_current.x - c2->position_current.x,
+                .y = c1->position_current.y - c2->position_current.y
+            };
+            float dist = vector_length(axis_collision);
+            int radius_sum = c1->radius + c2->radius;
+            if (dist < radius_sum){
+                vector n = {
+                    .x = axis_collision.x / dist,
+                    .y = axis_collision.y / dist
+                };
+                float delta = radius_sum - dist;
+                c1->position_current.x += 0.5 * delta * n.x;
+                c1->position_current.y += 0.5 * delta * n.y;
+
+                c2->position_current.x += 0.5 * delta * n.x;
+                c2->position_current.y += 0.5 * delta * n.y;
+            }
+        }
+    }
+}
+
+
 void update_simulation(simulation *sim, float dt){
     apply_gravity(sim);
-    update_positions(sim, dt);
     apply_constraint(sim);
+    solve_collisions(sim);
+    update_positions(sim, dt);
 }
+
 
 void add_circle(simulation *sim, uint radius, float px, float py, unsigned char red, unsigned char green, unsigned char blue, float acc_x, float acc_y){
     verlet_circle new_circle = {
