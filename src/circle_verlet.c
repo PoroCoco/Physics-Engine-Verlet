@@ -3,7 +3,7 @@
 
 
 float vector_length(vector v){
-    return sqrtf(powf(v.x, 2.0)+powf(v.y, 2.0));
+    return sqrt((v.x*v.x)+(v.y*v.y));
 }
 
 void update_position_circle(verlet_circle *c, float dt){
