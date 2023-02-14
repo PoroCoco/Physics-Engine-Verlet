@@ -5,7 +5,7 @@
 #include "graphics.h"
 #include "simulation.h"
 
-#define CIRCLE_RADIUS 5
+#define CIRCLE_RADIUS 25
 
 int main(int argc, char* argv[]) {
 
@@ -58,7 +58,9 @@ int main(int argc, char* argv[]) {
             }
         }
         if(button_mousedown){
-            add_circle(sim, CIRCLE_RADIUS, event.button.x, event.button.y, 0, 0, 255, 0, 0);
+            int x,y;
+            SDL_GetMouseState( &x, &y );
+            add_circle(sim, CIRCLE_RADIUS, x, y, 0, 0, 255, 0, 0);
         }
 
         update_simulation(sim, 1/60.0);
