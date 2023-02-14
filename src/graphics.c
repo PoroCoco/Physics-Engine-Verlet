@@ -108,14 +108,9 @@ void render_simulation(struct gui *gui, simulation *sim){
     for (size_t i = 0; i < sim->circle_count; i++)
     {
         verlet_circle *c = sim->circles + i;
+        if (c->position_current.x > WINDOW_WIDTH || c->position_current.x < 0) continue;
+        if (c->position_current.y > WINDOW_HEIGHT || c->position_current.y < 0) continue;
         SDL_SetRenderDrawColor(gui->renderer, c->r, c->g, c->b, SDL_ALPHA_OPAQUE);
-        draw_circle(gui->renderer, c->position_current.x, c->position_current.y, c->radius);
+        draw_circle(gui->renderer, (int)c->position_current.x, (int)c->position_current.y, c->radius);
     }
 }
-
-    
-
-
-// SDL_Rect rectangle = {PIXEL_WIDTH * x, PIXEL_HEIGHT * y,PIXEL_WIDTH,PIXEL_HEIGHT};
-// if(SDL_RenderFillRect(renderer, &rectangle) != 0){
-//     SDL_ExitWithError("Impossible de dessiner un pixel(rectangle)",window,renderer);

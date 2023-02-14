@@ -14,6 +14,7 @@ void update_position_circle(verlet_circle *c, float dt){
 
     //Verlet integration
     c->position_current.x = c->position_current.x + velocity.x + c->acceleration.x * dt * dt;
+    c->position_current.y = c->position_current.y + velocity.y + c->acceleration.y * dt * dt;
 
     //Reset Acceleration
     c->acceleration.x = 0;
