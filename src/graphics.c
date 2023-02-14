@@ -54,21 +54,68 @@ void render_gui(struct gui *gui){
 
 
 
-// void render_simulation(SDL_Renderer *renderer, SDL_Window *window){
+//How to draw filled circle with SDL2 : https://gist.github.com/Gumichan01/332c26f6197a432db91cc4327fcabb1c
+int
+draw_circle(SDL_Renderer * renderer, int x, int y, int radius)
+{
+    int offsetx, offsety, d;
+    int status;
+
+    offsetx = 0;
+    offsety = radius;
+    d = radius -1;
+    status = 0;
+
+    while (offsety >= offsetx) {
+
+        status += SDL_RenderDrawLine(renderer, x - offsety, y + offsetx,
+                                     x + offsety, y + offsetx);
+        status += SDL_RenderDrawLine(renderer, x - offsetx, y + offsety,
+                                     x + offsetx, y + offsety);
+        status += SDL_RenderDrawLine(renderer, x - offsetx, y - offsety,
+                                     x + offsetx, y - offsety);
+        status += SDL_RenderDrawLine(renderer, x - offsety, y - offsetx,
+                                     x + offsety, y - offsetx);
+
+        if (status < 0) {
+            status = -1;
+            break;
+        }
+
+        if (d >= 2*offsetx) {
+            d -= 2*offsetx + 1;
+            offsetx +=1;
+        }
+        else if (d < 2 * (radius - offsety)) {
+            d += 2 * offsety - 1;
+            offsety -= 1;
+        }
+        else {
+            d += 2 * (offsety - offsetx - 1);
+            offsety -= 1;
+            offsetx += 1;
+        }
+    }
+
+    return status;
+}
+
+//takes an array of circle (x,y,radius,color) and draw them.
+void render_simulation(struct gui *gui, circles *circles, size_t count){
+    SDL_SetRenderDrawColor(gui->renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
+    SDL_RenderClear(gui->renderer);
+
+    for (size_t i = 0; i < count; i++)
+    {
+        circle c =  circles[i];
+        SDL_SetRenderDrawColor(gui->renderer, circles[i].r, circles[i].g, circles[i].b, SDL_ALPHA_OPAQUE);
+        draw_circle(gui->renderer, circles[i].x, circles[i].y, circles[i].radius);
+    }
+}
 
     
 
 
-
-//     // for(uint y = 0; y < LIGNE; y++){
-//     //     for(uint x = 0; x < COLONNE; x++){
-//     //         if(SDL_SetRenderDrawColor(renderer, world[y][x].color.R, world[y][x].color.G, world[y][x].color.B, world[y][x].color.ALPHA) != 0){
-//     //             SDL_ExitWithError("Changement couleur impossible",window,renderer);
-//     //         }
-//     //         SDL_Rect rectangle = {PIXEL_WIDTH * x, PIXEL_HEIGHT * y,PIXEL_WIDTH,PIXEL_HEIGHT};
-//     //         if(SDL_RenderFillRect(renderer, &rectangle) != 0){
-//     //             SDL_ExitWithError("Impossible de dessiner un pixel(rectangle)",window,renderer);
-//     //         }
-//     //     }
-//     // }
-// }
+// SDL_Rect rectangle = {PIXEL_WIDTH * x, PIXEL_HEIGHT * y,PIXEL_WIDTH,PIXEL_HEIGHT};
+// if(SDL_RenderFillRect(renderer, &rectangle) != 0){
+//     SDL_ExitWithError("Impossible de dessiner un pixel(rectangle)",window,renderer);

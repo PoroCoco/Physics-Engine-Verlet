@@ -16,5 +16,7 @@ struct gui{
 struct gui* init_gui(void);
 void end_gui(struct gui *gui);
 void render_gui(struct gui *gui);
+void render_simulation(struct gui *gui);
+
 
 #endif // _GRAPHICS_H__

@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <time.h>
 #include <stdbool.h>
 
 #include "graphics.h"
@@ -7,7 +8,9 @@
 int main(int argc, char* argv[]) {
 
     struct gui *gui = init_gui();
-
+    
+    
+    srand(time(NULL));
 
     SDL_Event event;
     bool program_launched = true;
@@ -51,7 +54,7 @@ int main(int argc, char* argv[]) {
         }
 
 
-        // render_simulation(renderer, window);
+        render_simulation(gui);
 
         render_gui(gui);
     }
