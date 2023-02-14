@@ -28,7 +28,7 @@ struct gui* init_gui(void){
         gui_exit_with_error("Window creation failed", gui);
     }
 
-    gui->renderer = SDL_CreateRenderer(gui->window, SDL_RENDERER_SOFTWARE, 0);
+    gui->renderer = SDL_CreateRenderer(gui->window, SDL_RENDERER_ACCELERATED, 0);
     if (gui->renderer == NULL){
         gui_exit_with_error("Renderer creation failed", gui);
     }

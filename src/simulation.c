@@ -75,9 +75,11 @@ void solve_collisions(simulation *sim){
                 .x = c1->position_current.x - c2->position_current.x,
                 .y = c1->position_current.y - c2->position_current.y
             };
+
             float dist = vector_length(axis_collision);
             int radius_sum = c1->radius + c2->radius;
-            if (dist < radius_sum){
+
+            if (dist < (float)radius_sum){
                 vector n = {
                     .x = axis_collision.x / dist,
                     .y = axis_collision.y / dist
@@ -86,8 +88,8 @@ void solve_collisions(simulation *sim){
                 c1->position_current.x += 0.5 * delta * n.x;
                 c1->position_current.y += 0.5 * delta * n.y;
 
-                c2->position_current.x += 0.5 * delta * n.x;
-                c2->position_current.y += 0.5 * delta * n.y;
+                c2->position_current.x -= 0.5 * delta * n.x;
+                c2->position_current.y -= 0.5 * delta * n.y;
             }
         }
     }
@@ -95,10 +97,18 @@ void solve_collisions(simulation *sim){
 
 
 void update_simulation(simulation *sim, float dt){
-    apply_gravity(sim);
-    apply_constraint(sim);
-    solve_collisions(sim);
-    update_positions(sim, dt);
+
+    float sub_dt = dt/(float)SUB_STEPS;
+    add_circle(sim, 4+(rand()%(CIRCLE_RADIUS-4)), 940, 500, rand()%255, rand()%255, rand()%255, 0, 0);
+    for (size_t i = 0; i < SUB_STEPS; i++)
+    {
+
+        apply_gravity(sim);
+        apply_constraint(sim);
+        solve_collisions(sim);
+        update_positions(sim, sub_dt);
+    }
+
 }
 
 

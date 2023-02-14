@@ -5,20 +5,20 @@
 #include "graphics.h"
 #include "simulation.h"
 
-#define CIRCLE_RADIUS 25
 
 int main(int argc, char* argv[]) {
 
     struct gui *gui = init_gui();
     simulation *sim = init_simulation();
     
-    add_circle(sim, CIRCLE_RADIUS, 400, 300, 0, 0, 255, 0, 0);
+    // add_circle(sim, CIRCLE_RADIUS, 400, 300, 0, 0, 255, 0, 0);
 
     srand(time(NULL));
 
     SDL_Event event;
     bool program_launched = true;
     bool button_mousedown = false;
+    uint frame_counter = 0;
 
     while(program_launched)
     {
@@ -30,6 +30,9 @@ int main(int argc, char* argv[]) {
 
                 case SDL_MOUSEBUTTONDOWN:
                     button_mousedown = true;
+                    int x,y;
+                    SDL_GetMouseState( &x, &y );
+                    // add_circle(sim, CIRCLE_RADIUS, x, y, 0, 0, 255, 0, 0);
                     break;
 
                 case SDL_MOUSEBUTTONUP:
@@ -60,7 +63,7 @@ int main(int argc, char* argv[]) {
         if(button_mousedown){
             int x,y;
             SDL_GetMouseState( &x, &y );
-            add_circle(sim, CIRCLE_RADIUS, x, y, 0, 0, 255, 0, 0);
+            add_circle(sim, 4+(rand()%(CIRCLE_RADIUS-4)), x, y, rand()%255, rand()%255, rand()%255, 0, 0);
         }
         
         update_simulation(sim, 1/60.0);
@@ -74,8 +77,13 @@ int main(int argc, char* argv[]) {
         if(fps_delay>0){
             printf("freeze for %f\n", fps_delay);
             SDL_Delay(fps_delay);
-        } 
+        }
 
+        if(frame_counter%60 == 0){
+            printf("%zu objects in simulation\n", sim->circle_count);
+        }
+
+        frame_counter++;
     }
 
     destroy_simulation(sim);
