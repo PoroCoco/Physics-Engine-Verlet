@@ -20,8 +20,8 @@ void update_positions(simulation *sim, float dt){
 }
 
 void apply_constraint(simulation *sim){
-    vector position = {.x = WINDOW_WIDTH/2, .y = WINDOW_HEIGHT/2};
-    float radius =  (WINDOW_HEIGHT-100)/2;
+    vector position = {.x = WINDOW_WIDTH/2.0, .y = WINDOW_HEIGHT/2.0};
+    float radius =  (WINDOW_HEIGHT-100)/2.0;
 
     for (size_t i = 0; i < sim->circle_count; i++)
     {
@@ -31,13 +31,13 @@ void apply_constraint(simulation *sim){
         to_circle.y = c->position_current.y - position.y;
         float dist = vector_length(to_circle);
 
-        if ((int)dist > radius - c->radius){
+        if (dist > radius - (float)c->radius){
             vector n = {
                 .x = to_circle.x / dist,
                 .y = to_circle.y / dist
             };
-            c->position_current.x = position.x + n.x *(dist - c->radius);
-            c->position_current.y = position.y + n.y *(dist - c->radius);
+            c->position_current.x = position.x + n.x * (radius - (float)(c->radius));
+            c->position_current.y = position.y + n.y * (radius - (float)(c->radius));
         }
         
 

@@ -12,7 +12,7 @@ int main(int argc, char* argv[]) {
     struct gui *gui = init_gui();
     simulation *sim = init_simulation();
     
-    add_circle(sim, CIRCLE_RADIUS, 150, 300, 0, 0, 255, 0, 0);
+    add_circle(sim, CIRCLE_RADIUS, 400, 300, 0, 0, 255, 0, 0);
 
     srand(time(NULL));
 
@@ -62,7 +62,7 @@ int main(int argc, char* argv[]) {
             SDL_GetMouseState( &x, &y );
             add_circle(sim, CIRCLE_RADIUS, x, y, 0, 0, 255, 0, 0);
         }
-
+        
         update_simulation(sim, 1/60.0);
         render_simulation(gui, sim);
         render_gui(gui);
