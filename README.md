@@ -1,1 +1,3 @@
-# verlet-simulation
+# c-verlet-simulation
+
+
