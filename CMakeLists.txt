@@ -28,7 +28,7 @@ include_directories(${SDL2_ALL_INC})
 ############################# SRC #############################
 
 
-add_executable(verlet src/verlet.c src/graphics.c src/error_handler.c)
+add_executable(verlet src/verlet.c src/graphics.c src/error_handler.c src/circle_verlet.c src/simulation.c)
 target_link_libraries(verlet ${SDL2_ALL_LIBS} m)
 
 

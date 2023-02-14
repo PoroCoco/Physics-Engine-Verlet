@@ -25,7 +25,7 @@ void update_simulation(simulation *sim, float dt){
     update_positions(sim, dt);
 }
 
-simulation *init_simulation(){
+simulation *init_simulation(void){
     simulation *s = malloc(sizeof(simulation));
     _check_malloc(s, __LINE__, __FILE__);
     s->circle_count = 0;

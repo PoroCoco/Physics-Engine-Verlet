@@ -12,6 +12,7 @@ typedef struct verlet_circle {
     vector position_old;
     vector acceleration;
 
+    unsigned int radius;
     unsigned char r;
     unsigned char g;
     unsigned char b;

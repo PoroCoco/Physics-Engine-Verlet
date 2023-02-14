@@ -1,6 +1,5 @@
 #include "graphics.h"
 #include "error_handler.h"
-#include "simulation.h"
 
 void gui_exit_with_error(const char *message, struct gui *gui){
     printf("Error\n");
@@ -101,7 +100,7 @@ draw_circle(SDL_Renderer * renderer, int x, int y, int radius)
     return status;
 }
 
-//takes an array of circle (x,y,radius,color) and draw them.
+
 void render_simulation(struct gui *gui, simulation *sim){
     SDL_SetRenderDrawColor(gui->renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
     SDL_RenderClear(gui->renderer);
@@ -109,8 +108,8 @@ void render_simulation(struct gui *gui, simulation *sim){
     for (size_t i = 0; i < sim->circle_count; i++)
     {
         verlet_circle *c = sim->circles + i;
-        SDL_SetRenderDrawColor(gui->renderer, c.r, c.g, c.b, SDL_ALPHA_OPAQUE);
-        draw_circle(gui->renderer, c.x, c.y, c.radius);
+        SDL_SetRenderDrawColor(gui->renderer, c->r, c->g, c->b, SDL_ALPHA_OPAQUE);
+        draw_circle(gui->renderer, c->position_current.x, c->position_current.y, c->radius);
     }
 }
 

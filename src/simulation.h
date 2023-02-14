@@ -11,7 +11,7 @@ typedef struct simulation{
 
 } simulation;
 
-simulation *init_simulation();
+simulation *init_simulation(void);
 void destroy_simulation(simulation *s);
 
 #endif // _SIMULATION_H__
