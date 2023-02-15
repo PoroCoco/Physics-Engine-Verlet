@@ -88,6 +88,8 @@ void solve_circle_collision(verlet_circle *c1, verlet_circle *c2){
         .x = c1->position_current.x - c2->position_current.x,
         .y = c1->position_current.y - c2->position_current.y
     };
+    
+    if(axis_collision.x == 0.0 && axis_collision.y == 0.0) axis_collision.x = 0.01;
 
     float dist = vector_length(axis_collision);
     int radius_sum = c1->radius + c2->radius;
@@ -117,10 +119,10 @@ void solve_cell_collisions(simulation *sim){
             {
                 for (int dx = -1; dx < 1; dx++)
                 {
-                    if (x + dx < 0 || x+dx > sim->grid->width) continue;
+                    if (x+dx > sim->grid->width) continue;
                     for (int dy = -1; dy < 1; dy++)
                     {
-                        if (y + dy < 0 || y+dy > sim->grid->height) continue;
+                        if (y+dy > sim->grid->height) continue;
                         for (size_t j = 0; j < sim->grid->grid[y + dy][x + dx].count; j++)
                         {
                             // printf("solving between grid %zu,%zu and %zu,%zu : c%zu and c%zu\n", y,x, y+dy, x+dx, i, j);
@@ -154,7 +156,9 @@ void update_grid(simulation *sim){
 void update_simulation(simulation *sim, float dt){
 
     float sub_dt = dt/(float)SUB_STEPS;
-    if (sim->circle_count < 1000) add_circle(sim, 4+(rand()%(CIRCLE_RADIUS-4)), WINDOW_WIDTH/2.0 + rand()%5, WINDOW_HEIGHT/2.0+rand()%5, random_color(), 0, 0);
+    if (sim->circle_count < 2000) add_circle(sim, CIRCLE_RADIUS, WINDOW_WIDTH/2.0, WINDOW_HEIGHT/2.0, random_color(), 0, 0);
+    if (sim->circle_count < 2000) add_circle(sim, CIRCLE_RADIUS, WINDOW_WIDTH/2.0, WINDOW_HEIGHT/2.0,random_color(), 0, 0);
+    if (sim->circle_count < 2000) add_circle(sim, CIRCLE_RADIUS, WINDOW_WIDTH/2.0, WINDOW_HEIGHT/2.0, random_color(), 0, 0);
     for (size_t i = 0; i < SUB_STEPS; i++)
     {
         apply_gravity(sim);
