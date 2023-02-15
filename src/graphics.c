@@ -100,17 +100,28 @@ draw_circle(SDL_Renderer * renderer, int x, int y, int radius)
     return status;
 }
 
+void draw_grid(struct gui *gui, simulation *sim){
+    SDL_SetRenderDrawColor(gui->renderer, 100, 100, 100, SDL_ALPHA_OPAQUE);
+    for (size_t y = 0; y < sim->grid->height; y++){
+        SDL_RenderDrawLine(gui->renderer, 0, y*(WINDOW_HEIGHT/sim->grid->height), WINDOW_WIDTH, (y)*(WINDOW_HEIGHT/sim->grid->height));
+    }
+
+    for (size_t x = 0; x < sim->grid->width; x++){
+        SDL_RenderDrawLine(gui->renderer, x*(WINDOW_WIDTH/sim->grid->width), 0, x*(WINDOW_WIDTH/sim->grid->width), WINDOW_HEIGHT);
+    }
+}
 
 void render_simulation(struct gui *gui, simulation *sim){
     SDL_SetRenderDrawColor(gui->renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
     SDL_RenderClear(gui->renderer);
+
     
     #ifdef CIRCLE_BOUNDARY
     SDL_SetRenderDrawColor(gui->renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
-    draw_circle(gui->renderer, (int)(WINDOW_WIDTH/2), (int)(WINDOW_HEIGHT/2), (int)((WINDOW_HEIGHT-100)/2));
+    draw_circle(gui->renderer, sim->constraint_center.x, sim->constraint_center.y, sim->constraint_radius);
     #elif SQUARE_BOUNDARY
     SDL_SetRenderDrawColor(gui->renderer, 125, 125, 125, SDL_ALPHA_OPAQUE);
-    SDL_Rect rectangle = {.x = (WINDOW_WIDTH/4), .y = 50, .h = WINDOW_HEIGHT-100, .w = WINDOW_WIDTH - 2*(WINDOW_WIDTH/4), };
+    SDL_Rect rectangle = {.x = sim->constraint_center.x - sim->constraint_radius, .y = sim->constraint_center.y - sim->constraint_radius, .h = sim->constraint_radius * 2, .w = sim->constraint_radius * 2, };
     SDL_RenderFillRect(gui->renderer, &rectangle);
     #endif
 
@@ -123,4 +134,7 @@ void render_simulation(struct gui *gui, simulation *sim){
         SDL_SetRenderDrawColor(gui->renderer, c->color.r, c->color.g, c->color.b, SDL_ALPHA_OPAQUE);
         draw_circle(gui->renderer, (int)c->position_current.x, (int)c->position_current.y, c->radius);
     }
+
+    draw_grid(gui, sim);
+
 }

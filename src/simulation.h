@@ -4,11 +4,17 @@
 #include <stdlib.h>
 #include "misc.h"
 #include "circle_verlet.h"
+#include "grid.h"
 
 typedef struct simulation{
     size_t circle_count;
     size_t allocated_circles;
     verlet_circle *circles;
+
+    struct grid *grid;
+    vector constraint_center;
+    uint constraint_radius;
+
     uint total_frames;
 
 } simulation;

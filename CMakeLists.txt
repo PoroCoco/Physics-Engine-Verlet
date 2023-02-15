@@ -28,8 +28,8 @@ include_directories(${SDL2_ALL_INC})
 ############################# SRC #############################
 
 
-add_executable(verlet_circle src/verlet.c src/graphics.c src/error_handler.c src/circle_verlet.c src/simulation.c src/color.c)
-add_executable(verlet_square src/verlet.c src/graphics.c src/error_handler.c src/circle_verlet.c src/simulation.c src/color.c)
+add_executable(verlet_circle src/verlet.c src/graphics.c src/error_handler.c src/circle_verlet.c src/simulation.c src/color.c src/grid.c)
+add_executable(verlet_square src/verlet.c src/graphics.c src/error_handler.c src/circle_verlet.c src/simulation.c src/color.c src/grid.c)
 target_link_libraries(verlet_circle ${SDL2_ALL_LIBS} m)
 target_link_libraries(verlet_square ${SDL2_ALL_LIBS} m)
 target_compile_definitions(verlet_circle PRIVATE CIRCLE_BOUNDARY=1)

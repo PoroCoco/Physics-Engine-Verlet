@@ -32,7 +32,7 @@ int main(int argc, char* argv[]) {
                     button_mousedown = true;
                     int x,y;
                     SDL_GetMouseState( &x, &y );
-                    // add_circle(sim, CIRCLE_RADIUS, x, y, 0, 0, 255, 0, 0);
+                    // add_circle(sim, 4+(rand()%(CIRCLE_RADIUS-4)), x, y, rainbow_color(sim->circle_count), 0, 0);
                     break;
 
                 case SDL_MOUSEBUTTONUP:
@@ -83,13 +83,14 @@ int main(int argc, char* argv[]) {
             // printf("freeze for %f\n", fps_delay);
             SDL_Delay(fps_delay);
         }else if (fps_delay<-1){
-            printf("%zu objects in simulation\n", sim->circle_count);
+            // printf("%zu objects in simulation\n", sim->circle_count);
             // program_launched = false;
         }
 
         if(sim->total_frames%60 == 0){
             // printf("%zu objects in simulation\n", sim->circle_count);
         }
+        printf("frame %zu, %zu objects in simulation. Frame time : %.3f\n", sim->total_frames, sim->circle_count, elapsedMS);
 
         sim->total_frames++;
     }
