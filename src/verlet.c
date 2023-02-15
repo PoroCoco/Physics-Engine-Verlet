@@ -5,6 +5,7 @@
 #include "graphics.h"
 #include "simulation.h"
 
+extern vector gravity;
 
 int main(int argc, char* argv[]) {
 
@@ -13,12 +14,11 @@ int main(int argc, char* argv[]) {
     
     // add_circle(sim, CIRCLE_RADIUS, 400, 300, 0, 0, 255, 0, 0);
 
-    srand(6969);
+    srand(time(NULL));
 
     SDL_Event event;
     bool program_launched = true;
     bool button_mousedown = false;
-    uint frame_counter = 0;
 
     while(program_launched)
     {
@@ -42,6 +42,11 @@ int main(int argc, char* argv[]) {
                 case SDL_KEYDOWN:
                     switch (event.key.keysym.sym)
                     {
+                    case SDLK_g:
+                        printf("inverting gravity\n");
+                        gravity.y = gravity.y*(-1); 
+                        continue;
+
                     case SDLK_ESCAPE:
                         printf("Esc pressed, closing simulation\n");
                         program_launched = false;
@@ -63,7 +68,7 @@ int main(int argc, char* argv[]) {
         if(button_mousedown){
             int x,y;
             SDL_GetMouseState( &x, &y );
-            add_circle(sim, 4+(rand()%(CIRCLE_RADIUS-4)), x, y, rand()%255, rand()%255, rand()%255, 0, 0);
+            add_circle(sim, 4+(rand()%(CIRCLE_RADIUS-4)), x, y, rainbow_color(sim->circle_count), 0, 0);
         }
         
         update_simulation(sim, 1/60.0);
@@ -78,15 +83,15 @@ int main(int argc, char* argv[]) {
             // printf("freeze for %f\n", fps_delay);
             SDL_Delay(fps_delay);
         }else if (fps_delay<-1){
-            // printf("%zu objects in simulation\n", sim->circle_count);
+            printf("%zu objects in simulation\n", sim->circle_count);
             // program_launched = false;
         }
 
-        if(frame_counter%60 == 0){
-            printf("%zu objects in simulation\n", sim->circle_count);
+        if(sim->total_frames%60 == 0){
+            // printf("%zu objects in simulation\n", sim->circle_count);
         }
 
-        frame_counter++;
+        sim->total_frames++;
     }
 
     destroy_simulation(sim);

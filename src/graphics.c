@@ -23,7 +23,7 @@ struct gui* init_gui(void){
         gui_exit_with_error("SDL Initialisation", gui);
     }
 
-    gui->window = SDL_CreateWindow("Verlet Simulation", 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_SHOWN);
+    gui->window = SDL_CreateWindow("Verlet Simulation", 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_FULLSCREEN);
     if (gui->window == NULL){
         gui_exit_with_error("Window creation failed", gui);
     }
@@ -104,16 +104,23 @@ draw_circle(SDL_Renderer * renderer, int x, int y, int radius)
 void render_simulation(struct gui *gui, simulation *sim){
     SDL_SetRenderDrawColor(gui->renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
     SDL_RenderClear(gui->renderer);
-
+    
+    #ifdef CIRCLE_BOUNDARY
     SDL_SetRenderDrawColor(gui->renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
     draw_circle(gui->renderer, (int)(WINDOW_WIDTH/2), (int)(WINDOW_HEIGHT/2), (int)((WINDOW_HEIGHT-100)/2));
+    #elif SQUARE_BOUNDARY
+    SDL_SetRenderDrawColor(gui->renderer, 125, 125, 125, SDL_ALPHA_OPAQUE);
+    SDL_Rect rectangle = {.x = (WINDOW_WIDTH/4), .y = 50, .h = WINDOW_HEIGHT-100, .w = WINDOW_WIDTH - 2*(WINDOW_WIDTH/4), };
+    SDL_RenderFillRect(gui->renderer, &rectangle);
+    #endif
+
 
     for (size_t i = 0; i < sim->circle_count; i++)
     {
         verlet_circle *c = sim->circles + i;
         if (c->position_current.x > WINDOW_WIDTH || c->position_current.x < 0) continue;
         if (c->position_current.y > WINDOW_HEIGHT || c->position_current.y < 0) continue;
-        SDL_SetRenderDrawColor(gui->renderer, c->r, c->g, c->b, SDL_ALPHA_OPAQUE);
+        SDL_SetRenderDrawColor(gui->renderer, c->color.r, c->color.g, c->color.b, SDL_ALPHA_OPAQUE);
         draw_circle(gui->renderer, (int)c->position_current.x, (int)c->position_current.y, c->radius);
     }
 }

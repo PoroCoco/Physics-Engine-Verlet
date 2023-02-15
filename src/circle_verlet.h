@@ -1,6 +1,7 @@
 #ifndef _CIRCLE_VERLET_H__
 #define _CIRCLE_VERLET_H__
 
+#include "color.h"
 
 typedef struct vector{
     float x;
@@ -11,11 +12,9 @@ typedef struct verlet_circle {
     vector position_current;
     vector position_old;
     vector acceleration;
-
+    
+    color_t color;
     unsigned int radius;
-    unsigned char r;
-    unsigned char g;
-    unsigned char b;
 } verlet_circle;
 
 void update_position_circle(verlet_circle *c, float dt);

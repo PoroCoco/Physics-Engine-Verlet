@@ -17,7 +17,7 @@ set(CMAKE_C_FLAGS_RELEASE "-O3 -DNDEBUG")   # use CMake option: -DCMAKE_BUILD_TY
 ## use a CMake3 package to solve SDL2 dependencies
 find_package(SDL2 REQUIRED)
 set(SDL2_ALL_INC ${SDL2_INCLUDE_DIRS})
-set(SDL2_ALL_LIBS ${SDL2_LIBRARIES} ) # add extra SDL2 libraries # -lSDL2_mixer -lSDL2_ttf -lSDL2_image 
+set(SDL2_ALL_LIBS ${SDL2_LIBRARIES} ) 
 
 ## print this 
 message(STATUS "SDL2 include dir: ${SDL2_ALL_INC}")
@@ -28,9 +28,12 @@ include_directories(${SDL2_ALL_INC})
 ############################# SRC #############################
 
 
-add_executable(verlet src/verlet.c src/graphics.c src/error_handler.c src/circle_verlet.c src/simulation.c)
-target_link_libraries(verlet ${SDL2_ALL_LIBS} m)
-
+add_executable(verlet_circle src/verlet.c src/graphics.c src/error_handler.c src/circle_verlet.c src/simulation.c src/color.c)
+add_executable(verlet_square src/verlet.c src/graphics.c src/error_handler.c src/circle_verlet.c src/simulation.c src/color.c)
+target_link_libraries(verlet_circle ${SDL2_ALL_LIBS} m)
+target_link_libraries(verlet_square ${SDL2_ALL_LIBS} m)
+target_compile_definitions(verlet_circle PRIVATE CIRCLE_BOUNDARY=1)
+target_compile_definitions(verlet_square PRIVATE SQUARE_BOUNDARY=1)
 
 
 # ############################# TEST V1 #############################

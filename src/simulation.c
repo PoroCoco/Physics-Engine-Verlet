@@ -1,9 +1,29 @@
 #include "simulation.h"
 #include "circle_verlet.h"
 #include "error_handler.h"
+#include <time.h>
+
+
 
 vector gravity = {.x = 0, .y = 1000};
 
+simulation *init_simulation(void){
+    simulation *s = malloc(sizeof(simulation));
+    _check_malloc(s, __LINE__, __FILE__);
+    s->circle_count = 0;
+    s->circles = malloc(sizeof(verlet_circle));
+    _check_malloc(s->circles, __LINE__, __FILE__);
+    s->allocated_circles = 1;
+    s->total_frames = 0;
+
+    return s;
+}
+
+void destroy_simulation(simulation *s){
+    if (!s) return;
+    if (s->circles) free(s->circles);
+    free(s);
+}
 
 void apply_gravity(simulation *sim){
     for (size_t i = 0; i < sim->circle_count; i++)
@@ -20,6 +40,22 @@ void update_positions(simulation *sim, float dt){
 }
 
 void apply_constraint(simulation *sim){
+    #ifdef SQUARE_BOUNDARY
+    vector position = {.x = WINDOW_WIDTH/2.0, .y = WINDOW_HEIGHT/2.0};
+    uint radius = (WINDOW_HEIGHT/2)- 50;
+    for (size_t i = 0; i < sim->circle_count; i++)
+    {
+        verlet_circle *c = sim->circles + i;
+        if (c->position_current.y - c->radius < position.y - radius ) c->position_current.y = position.y - radius + c->radius;
+        if (c->position_current.y + c->radius > position.y + radius) c->position_current.y = position.y + radius - c->radius;
+        if (c->position_current.x + c->radius > position.x + radius) c->position_current.x = position.x + radius - c->radius;
+        if (c->position_current.x - c->radius < position.x - radius) c->position_current.x = position.x - radius + c->radius;
+    }
+    #endif
+
+
+
+    #ifdef CIRCLE_BOUNDARY
     vector position = {.x = WINDOW_WIDTH/2.0, .y = WINDOW_HEIGHT/2.0};
     float radius =  (WINDOW_HEIGHT-100)/2.0;
 
@@ -39,30 +75,12 @@ void apply_constraint(simulation *sim){
             c->position_current.x = position.x + n.x * (radius - (float)(c->radius));
             c->position_current.y = position.y + n.y * (radius - (float)(c->radius));
         }
-        
-
     }
+    #endif
     
 
 }
 
-
-simulation *init_simulation(void){
-    simulation *s = malloc(sizeof(simulation));
-    _check_malloc(s, __LINE__, __FILE__);
-    s->circle_count = 0;
-    s->circles = malloc(sizeof(verlet_circle));
-    _check_malloc(s->circles, __LINE__, __FILE__);
-    s->allocated_circles = 1;
-
-    return s;
-}
-
-void destroy_simulation(simulation *s){
-    if (!s) return;
-    if (s->circles) free(s->circles);
-    free(s);
-}
 
 void solve_collisions(simulation *sim){
     for (size_t i = 0; i < sim->circle_count; i++)
@@ -95,14 +113,12 @@ void solve_collisions(simulation *sim){
     }
 }
 
-
 void update_simulation(simulation *sim, float dt){
 
     float sub_dt = dt/(float)SUB_STEPS;
-    add_circle(sim, 4+(rand()%(CIRCLE_RADIUS-4)), 940, 500, rand()%255, rand()%255, rand()%255, 0, 0);
+    if (sim->circle_count < 500) add_circle(sim, 4+(rand()%(CIRCLE_RADIUS-4)), WINDOW_WIDTH/2.0 + rand()%5, WINDOW_HEIGHT/2.0+rand()%5, random_color(), 0, 0);
     for (size_t i = 0; i < SUB_STEPS; i++)
     {
-
         apply_gravity(sim);
         apply_constraint(sim);
         solve_collisions(sim);
@@ -112,7 +128,7 @@ void update_simulation(simulation *sim, float dt){
 }
 
 
-void add_circle(simulation *sim, uint radius, float px, float py, unsigned char red, unsigned char green, unsigned char blue, float acc_x, float acc_y){
+void add_circle(simulation *sim, uint radius, float px, float py, color_t color, float acc_x, float acc_y){
     verlet_circle new_circle = {
         .radius = radius,
         .position_old.x = px,
@@ -121,9 +137,7 @@ void add_circle(simulation *sim, uint radius, float px, float py, unsigned char 
         .position_current.y = py,
         .acceleration.x = acc_x,
         .acceleration.y = acc_y,
-        .r = red,
-        .g = green,
-        .b = blue
+        .color = color
     };
     sim->circles[sim->circle_count] = new_circle;
 

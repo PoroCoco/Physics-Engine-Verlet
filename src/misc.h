@@ -4,7 +4,7 @@
 #define WINDOW_WIDTH 1920
 #define WINDOW_HEIGHT 1080
 #define SUB_STEPS 8
-#define CIRCLE_RADIUS 10
+#define CIRCLE_RADIUS 1
 
 
 typedef unsigned int uint;
