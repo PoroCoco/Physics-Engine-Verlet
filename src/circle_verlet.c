@@ -6,6 +6,11 @@ float vector_length(vector v){
     return sqrt((v.x*v.x)+(v.y*v.y));
 }
 
+vector vector_create(float x, float y){
+    vector v = {.x = x, .y = y};
+    return v;
+}
+
 void update_position_circle(verlet_circle *c, float dt){
     vector velocity;
     velocity.x = c->position_current.x - c->position_old.x;

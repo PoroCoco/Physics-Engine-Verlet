@@ -21,5 +21,6 @@ void update_position_circle(verlet_circle *c, float dt);
 void accelerate_circle(verlet_circle *c, vector *acc);
 
 float vector_length(vector v);
+vector vector_create(float x, float y);
 
 #endif // _CIRCLE_VERLET_H__
