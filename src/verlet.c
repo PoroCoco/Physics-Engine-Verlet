@@ -90,7 +90,7 @@ int main(int argc, char* argv[]) {
         if(sim->total_frames%60 == 0){
             // printf("%zu objects in simulation\n", sim->circle_count);
         }
-        printf("frame %zu, %zu objects in simulation. Frame time : %.3f\n", sim->total_frames, sim->circle_count, elapsedMS);
+        printf("frame %u, %zu objects in simulation. Frame time : %.3f\n", sim->total_frames, sim->circle_count, elapsedMS);
 
         sim->total_frames++;
     }
