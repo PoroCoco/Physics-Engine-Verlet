@@ -2,6 +2,7 @@
 #include "circle_verlet.h"
 #include "error_handler.h"
 #include <time.h>
+#include <pthread.h>
 
 
 
@@ -108,9 +109,17 @@ void solve_circle_collision(verlet_circle *c1, verlet_circle *c2){
     }
 }
 
-void solve_cell_collisions(simulation *sim){
+struct arguments_collision {
+    simulation *sim;
+    uint col_begin;
+    uint col_end;
+};
+
+void *solve_cell_collisions(void * thread_data){
     // printf("entering solveing\n");
-    for (size_t x = 0; x < sim->grid->width; x++)
+    struct arguments_collision *arg_c = (struct arguments_collision*) thread_data;
+    simulation *sim = arg_c->sim;
+    for (size_t x = arg_c->col_begin; x < arg_c->col_end; x++)
     {
         for (size_t y = 0; y < sim->grid->height; y++)
         {
@@ -133,6 +142,7 @@ void solve_cell_collisions(simulation *sim){
             }
         }
     }
+    return NULL;
 }
 
 void update_grid(simulation *sim){
@@ -152,6 +162,24 @@ void update_grid(simulation *sim){
 
 }
 
+void solve_threaded_collision(simulation *sim){
+    pthread_t * threads[THREAD_COUNT];
+
+    int ret;
+    for (size_t i = 0; i < THREAD_COUNT; i++)
+    {
+        struct arguments_collision arg_c = {.sim = sim, .col_begin = i * (GRID_WIDTH/THREAD_COUNT), .col_end = ((i+1)*(GRID_WIDTH/THREAD_COUNT))};
+        
+        ret = pthread_create(threads+i, NULL, solve_cell_collisions, (void *) &arg_c);   
+    }
+
+    for (size_t i = 0; i < THREAD_COUNT; i++)
+    {
+        pthread_join(threads[i], NULL);
+    }
+    
+}
+
 
 void update_simulation(simulation *sim, float dt){
 
@@ -159,12 +187,13 @@ void update_simulation(simulation *sim, float dt){
     if (sim->circle_count < 2000) add_circle(sim, CIRCLE_RADIUS, WINDOW_WIDTH/2.0, WINDOW_HEIGHT/2.0, random_color(), 0, 0);
     if (sim->circle_count < 2000) add_circle(sim, CIRCLE_RADIUS, WINDOW_WIDTH/2.0, WINDOW_HEIGHT/2.0,random_color(), 0, 0);
     if (sim->circle_count < 2000) add_circle(sim, CIRCLE_RADIUS, WINDOW_WIDTH/2.0, WINDOW_HEIGHT/2.0, random_color(), 0, 0);
+    if (sim->circle_count < 2000) add_circle(sim, CIRCLE_RADIUS, WINDOW_WIDTH/2.0, WINDOW_HEIGHT/2.0, random_color(), 0, 0);
     for (size_t i = 0; i < SUB_STEPS; i++)
     {
         apply_gravity(sim);
         apply_constraint(sim);
         update_grid(sim);
-        solve_cell_collisions(sim);
+        solve_threaded_collision(sim);
         update_positions(sim, sub_dt);
     }
 
