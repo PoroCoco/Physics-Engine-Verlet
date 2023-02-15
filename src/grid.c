@@ -28,7 +28,7 @@ struct grid *create_grid(uint width, uint height){
 
 void add_grid(struct grid *g, uint y, uint x, uint index){
     if (y >= g->height || x >= g->width){
-        fprintf(stderr, "WARNING : Tried to add into a grid cell at impossible position x,y %zu,%zu\n", x, y);  
+        fprintf(stderr, "WARNING : Tried to add into a grid cell at impossible position x,y %u,%u\n", x, y);  
         return;
     }
     g->grid[y][x].array[g->grid[y][x].count] = index;
