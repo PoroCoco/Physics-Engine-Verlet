@@ -127,16 +127,22 @@ void render_simulation(struct gui *gui, simulation *sim){
     #endif
 
     
+
+    SDL_Rect *circles_rectangles = malloc(sizeof(SDL_Rect) * sim->circle_count);
+
     for (size_t i = 0; i < sim->circle_count; i++)
     {
         verlet_circle *c = sim->circles + i;
         if (c->position_current.x > WINDOW_WIDTH || c->position_current.x < 0) continue;
         if (c->position_current.y > WINDOW_HEIGHT || c->position_current.y < 0) continue;
         SDL_SetRenderDrawColor(gui->renderer, c->color.r, c->color.g, c->color.b, SDL_ALPHA_OPAQUE);
-        SDL_Rect circles_rectangle = {.x = c->position_current.x - c->radius, .y = c->position_current.y - c->radius, .h = 2 * c->radius, .w = 2 * c->radius};
-        SDL_RenderFillRect(gui->renderer, &circles_rectangle);
+        SDL_Rect r = {.x = c->position_current.x - c->radius, .y = c->position_current.y - c->radius, .h = 2 * c->radius, .w = 2 * c->radius};
+        circles_rectangles[i] = r;
         // draw_circle(gui->renderer, (int)c->position_current.x, (int)c->position_current.y, c->radius);
     }
+
+    SDL_RenderFillRects(gui->renderer, circles_rectangles, sim->circle_count);
+    free(circles_rectangles);
 
     draw_grid(gui, sim);
 
