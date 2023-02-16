@@ -1,6 +1,7 @@
 # c-verlet-simulation
 My implementation of a verlet simulation in C .    
 
+![Alt Text](./images/verlet.gif)
 
 # Compilation
 You'll need to have the SDL2 library installed. The main branch is WIP. 
