@@ -91,6 +91,7 @@ void solve_circle_collision(verlet_circle *c1, verlet_circle *c2){
         .y = c1->position_current.y - c2->position_current.y
     };
     
+    //if circles are on the exact same position, prevents division by 0 and nan result. 
     if(axis_collision.x == 0.0 && axis_collision.y == 0.0) axis_collision.x = 0.01;
 
     float dist = vector_length(axis_collision);
@@ -189,7 +190,7 @@ void update_simulation(simulation *sim, float dt){
 
     float sub_dt = dt/(float)SUB_STEPS;
     if (sim->circle_count < 2000) add_circle(sim, CIRCLE_RADIUS, WINDOW_WIDTH/2.0, WINDOW_HEIGHT/2.0, random_color(), 0, 0);
-    if (sim->circle_count < 2000) add_circle(sim, CIRCLE_RADIUS, WINDOW_WIDTH/2.0, WINDOW_HEIGHT/2.0,random_color(), 0, 0);
+    if (sim->circle_count < 2000) add_circle(sim, CIRCLE_RADIUS, WINDOW_WIDTH/2.0, WINDOW_HEIGHT/2.0, random_color(), 0, 0);
     if (sim->circle_count < 2000) add_circle(sim, CIRCLE_RADIUS, WINDOW_WIDTH/2.0, WINDOW_HEIGHT/2.0, random_color(), 0, 0);
     if (sim->circle_count < 2000) add_circle(sim, CIRCLE_RADIUS, WINDOW_WIDTH/2.0, WINDOW_HEIGHT/2.0, random_color(), 0, 0);
     for (size_t i = 0; i < SUB_STEPS; i++)
