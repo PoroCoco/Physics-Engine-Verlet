@@ -2,6 +2,7 @@
 #include "circle_verlet.h"
 #include "error_handler.h"
 #include <time.h>
+#include <stdio.h>
 #include <pthread.h>
 
 
@@ -163,7 +164,7 @@ void update_grid(simulation *sim){
 }
 
 void solve_threaded_collision(simulation *sim){
-    pthread_t * threads[THREAD_COUNT];
+    pthread_t threads[THREAD_COUNT];
 
     int ret;
     for (size_t i = 0; i < THREAD_COUNT; i++)
@@ -171,6 +172,9 @@ void solve_threaded_collision(simulation *sim){
         struct arguments_collision arg_c = {.sim = sim, .col_begin = i * (GRID_WIDTH/THREAD_COUNT), .col_end = ((i+1)*(GRID_WIDTH/THREAD_COUNT))};
         
         ret = pthread_create(threads+i, NULL, solve_cell_collisions, (void *) &arg_c);   
+        if(ret) {
+            fprintf(stderr, "Thread creation error %d\n",ret);
+        }
     }
 
     for (size_t i = 0; i < THREAD_COUNT; i++)
