@@ -1,5 +1,6 @@
 #include "graphics.h"
 #include "error_handler.h"
+#include <stdio.h>
 
 void gui_exit_with_error(const char *message, struct gui *gui){
     printf("Error\n");
@@ -121,18 +122,20 @@ void render_simulation(struct gui *gui, simulation *sim){
     draw_circle(gui->renderer, sim->constraint_center.x, sim->constraint_center.y, sim->constraint_radius);
     #elif SQUARE_BOUNDARY
     SDL_SetRenderDrawColor(gui->renderer, 125, 125, 125, SDL_ALPHA_OPAQUE);
-    SDL_Rect rectangle = {.x = sim->constraint_center.x - sim->constraint_radius, .y = sim->constraint_center.y - sim->constraint_radius, .h = sim->constraint_radius * 2, .w = sim->constraint_radius * 2, };
+    SDL_Rect rectangle = {.x = sim->constraint_center.x - sim->constraint_radius, .y = sim->constraint_center.y - sim->constraint_radius, .h = sim->constraint_radius * 2, .w = sim->constraint_radius * 2};
     SDL_RenderFillRect(gui->renderer, &rectangle);
     #endif
 
-
+    
     for (size_t i = 0; i < sim->circle_count; i++)
     {
         verlet_circle *c = sim->circles + i;
         if (c->position_current.x > WINDOW_WIDTH || c->position_current.x < 0) continue;
         if (c->position_current.y > WINDOW_HEIGHT || c->position_current.y < 0) continue;
         SDL_SetRenderDrawColor(gui->renderer, c->color.r, c->color.g, c->color.b, SDL_ALPHA_OPAQUE);
-        draw_circle(gui->renderer, (int)c->position_current.x, (int)c->position_current.y, c->radius);
+        SDL_Rect circles_rectangle = {.x = c->position_current.x - c->radius, .y = c->position_current.y - c->radius, .h = 2 * c->radius, .w = 2 * c->radius};
+        SDL_RenderFillRect(gui->renderer, &circles_rectangle);
+        // draw_circle(gui->renderer, (int)c->position_current.x, (int)c->position_current.y, c->radius);
     }
 
     draw_grid(gui, sim);

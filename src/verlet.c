@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <time.h>
 #include <stdbool.h>
+#include <math.h>
 
 #include "graphics.h"
 #include "simulation.h"

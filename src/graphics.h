@@ -1,7 +1,12 @@
 #ifndef _GRAPHICS_H__
 #define _GRAPHICS_H__
 
-#include <SDL2/SDL.h>
+#if defined(__linux__) || defined(__unix__) 
+    #include <SDL2/SDL.h>
+#elif defined(_WIN32) || defined(WIN32) 
+    #include <SDL.h>
+#endif
+
 #include "simulation.h"
 
 

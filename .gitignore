@@ -1,2 +1,9 @@
 /build
 /.vscode
+
+#Windows compilation
+/lib
+/include
+/bin
+
+*.exe
