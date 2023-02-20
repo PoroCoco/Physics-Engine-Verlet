@@ -46,6 +46,14 @@ void add_grid(struct grid *g, uint y, uint x, uint index){
 
 void destroy_grid(struct grid *g){
     if (!g) return;
+    for (size_t i = 0; i < g->height; i++){
+        for (size_t j = 0; j < g->width; j++)
+        {
+            if (g->grid[i][j].array) free(g->grid[i][j].array);
+        }
+        if (g->grid[i]) free(g->grid[i]);
+    }
+    
     if (g->grid) free(g->grid);
     free(g);
 }
