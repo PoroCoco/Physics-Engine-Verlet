@@ -12,6 +12,9 @@ set(CMAKE_C_FLAGS "-std=c99 -Wall -pthread -Wextra -Wunused-parameter -Wstrict-p
 set(CMAKE_C_FLAGS_DEBUG "-g")    # use CMake option: -DCMAKE_BUILD_TYPE=DEBUG
 set(CMAKE_C_FLAGS_RELEASE "-O3 -DNDEBUG")   # use CMake option: -DCMAKE_BUILD_TYPE=RELEASE
 
+
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/test/standardSave.txt DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+
 ############################# SDL2 ############################
 
 ## use a CMake3 package to solve SDL2 dependencies
