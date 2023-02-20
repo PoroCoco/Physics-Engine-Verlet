@@ -29,7 +29,7 @@ typedef struct verlet_sim {
 
 vector gravity = {.x = 0, .y = 1000};
 
-verlet_sim_t *init_simulation(enum constraint_shape shape, float constraint_center_x, float constraint_center_y, unsigned int constraint_radius, unsigned int width, unsigned int height){
+verlet_sim_t *init_simulation(enum constraint_shape shape, float constraint_center_x, float constraint_center_y, unsigned int constraint_radius, unsigned int width, unsigned int height, unsigned int grid_width, unsigned int grid_height){
     verlet_sim_t *s = malloc(sizeof(verlet_sim_t));
     _check_malloc(s, __LINE__, __FILE__);
     s->circle_count = 0;
@@ -42,7 +42,7 @@ verlet_sim_t *init_simulation(enum constraint_shape shape, float constraint_cent
     s->constraint_center = vector_create(constraint_center_x, constraint_center_y);
     s->constraint_radius = constraint_radius;
 
-    s->grid = create_grid(GRID_WIDTH, GRID_HEIGHT);    
+    s->grid = create_grid(grid_width, grid_height);    
     s->height = height;
     s->width = width;
 
@@ -187,7 +187,7 @@ void solve_threaded_collision(verlet_sim_t *sim){
     int ret;
     for (size_t i = 0; i < THREAD_COUNT; i++)
     {
-        struct arguments_collision arg_c = {.sim = sim, .col_begin = i * (GRID_WIDTH/THREAD_COUNT), .col_end = ((i+1)*(GRID_WIDTH/THREAD_COUNT))};
+        struct arguments_collision arg_c = {.sim = sim, .col_begin = i * (sim->grid->width/THREAD_COUNT), .col_end = ((i+1)*(sim->grid->width/THREAD_COUNT))};
         
         ret = pthread_create(threads+i, NULL, solve_cell_collisions, (void *) &arg_c);   
         if(ret) {

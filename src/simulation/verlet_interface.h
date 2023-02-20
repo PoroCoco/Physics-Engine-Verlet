@@ -13,7 +13,7 @@ enum constraint_shape {
 typedef struct verlet_sim verlet_sim_t;
 
 
-verlet_sim_t *init_simulation(enum constraint_shape shape, float constraint_center_x, float constraint_center_y, unsigned int constraint_radius, unsigned int width, unsigned int height);
+verlet_sim_t *init_simulation(enum constraint_shape shape, float constraint_center_x, float constraint_center_y, unsigned int constraint_radius, unsigned int width, unsigned int height, unsigned int grid_width, unsigned int grid_height);
 
 void update_simulation(verlet_sim_t *sim, float dt);
 
@@ -51,5 +51,6 @@ color_t random_color(void);
 
 void sim_save_current_state(verlet_sim_t *sim, char* filename);
 
+verlet_sim_t * sim_load_file(char * file_path);
 
 #endif // _VERLET_INTERFACE_H__

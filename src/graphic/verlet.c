@@ -2,6 +2,7 @@
 #include <time.h>
 #include <stdbool.h>
 #include <math.h>
+#include <assert.h>
 
 #include "graphics.h"
 #include "config.h"
@@ -11,9 +12,10 @@
 int main(int argc, char* argv[]) {
 
     struct gui *gui = init_gui();
-    verlet_sim_t *sim = init_simulation(CIRCLE, CONSTRAINT_CENTER_X, CONSTRAINT_CENTER_Y, CONSTRAINT_RADIUS, WINDOW_WIDTH, WINDOW_HEIGHT);
+    verlet_sim_t *sim = init_simulation(CIRCLE, CONSTRAINT_CENTER_X, CONSTRAINT_CENTER_Y, CONSTRAINT_RADIUS, WINDOW_WIDTH, WINDOW_HEIGHT, GRID_WIDTH, GRID_HEIGHT);
+    assert(sim);
 
-    // add_circle(sim, CIRCLE_RADIUS, 400, 300, 0, 0, 255, 0, 0);
+    printf("loading succesful\n");
 
     srand(time(NULL));
 
@@ -47,6 +49,10 @@ int main(int argc, char* argv[]) {
                         printf("s pressed, saving simulation\n");
                         sim_save_current_state(sim, "saved.txt");
                         continue;
+
+                    case SDLK_u:
+                        update_simulation(sim, 1/60.0);
+                        continue;
                     
                     case SDLK_ESCAPE:
                         printf("Esc pressed, closing simulation\n");
@@ -72,7 +78,7 @@ int main(int argc, char* argv[]) {
             add_circle(sim, 4+(rand()%(CIRCLE_RADIUS-4)), x, y, rainbow_color(sim_get_object_count(sim)), 0, 0);
         }
         
-        update_simulation(sim, 1/60.0);
+        // update_simulation(sim, 1/60.0);
         render_simulation(gui, sim);
         render_gui(gui);
 

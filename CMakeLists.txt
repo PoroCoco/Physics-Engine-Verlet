@@ -38,6 +38,11 @@ target_link_libraries(verlet m pthread)
 target_link_libraries(verlet_circle ${SDL2_ALL_LIBS} m verlet)
 
 
+############################ TESTS TMP ############################
+
+add_executable(verlet_test test/test.c)
+target_link_libraries(verlet_test verlet)
+
 # ############################# TEST V1 #############################
 
 # # Aux Tests(game_aux.h)
