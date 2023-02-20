@@ -117,14 +117,14 @@ void render_simulation(struct gui *gui, simulation *sim){
     SDL_RenderClear(gui->renderer);
 
     
-    #ifdef CIRCLE_BOUNDARY
-    SDL_SetRenderDrawColor(gui->renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
-    draw_circle(gui->renderer, sim->constraint_center.x, sim->constraint_center.y, sim->constraint_radius);
-    #elif SQUARE_BOUNDARY
-    SDL_SetRenderDrawColor(gui->renderer, 125, 125, 125, SDL_ALPHA_OPAQUE);
-    SDL_Rect rectangle = {.x = sim->constraint_center.x - sim->constraint_radius, .y = sim->constraint_center.y - sim->constraint_radius, .h = sim->constraint_radius * 2, .w = sim->constraint_radius * 2};
-    SDL_RenderFillRect(gui->renderer, &rectangle);
-    #endif
+    if(sim->constraint_shape == CIRCLE){
+        SDL_SetRenderDrawColor(gui->renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
+        draw_circle(gui->renderer, sim->constraint_center.x, sim->constraint_center.y, sim->constraint_radius);
+    }else if (sim->constraint_shape == SQUARE){
+        SDL_SetRenderDrawColor(gui->renderer, 125, 125, 125, SDL_ALPHA_OPAQUE);
+        SDL_Rect rectangle = {.x = sim->constraint_center.x - sim->constraint_radius, .y = sim->constraint_center.y - sim->constraint_radius, .h = sim->constraint_radius * 2, .w = sim->constraint_radius * 2};
+        SDL_RenderFillRect(gui->renderer, &rectangle);
+    }
 
     
 

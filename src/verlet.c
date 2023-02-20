@@ -11,7 +11,7 @@ extern vector gravity;
 int main(int argc, char* argv[]) {
 
     struct gui *gui = init_gui();
-    simulation *sim = init_simulation();
+    simulation *sim = init_simulation(CIRCLE);
     
     // add_circle(sim, CIRCLE_RADIUS, 400, 300, 0, 0, 255, 0, 0);
 

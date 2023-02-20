@@ -6,6 +6,11 @@
 #include "circle_verlet.h"
 #include "grid.h"
 
+enum constraint_shape {
+    CIRCLE,
+    SQUARE
+};
+
 typedef struct simulation{
     size_t circle_count;
     size_t allocated_circles;
@@ -16,11 +21,11 @@ typedef struct simulation{
     uint constraint_radius;
 
     uint total_frames;
-
+    enum constraint_shape constraint_shape;
 } simulation;
 
 
-simulation *init_simulation(void);
+simulation *init_simulation(enum constraint_shape shape);
 
 void update_simulation(simulation *sim, float dt);
 void add_circle(simulation *sim, uint radius, float px, float py, color_t color, float acc_x, float acc_y);

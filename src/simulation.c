@@ -9,7 +9,7 @@
 
 vector gravity = {.x = 0, .y = 1000};
 
-simulation *init_simulation(void){
+simulation *init_simulation(enum constraint_shape shape){
     simulation *s = malloc(sizeof(simulation));
     _check_malloc(s, __LINE__, __FILE__);
     s->circle_count = 0;
@@ -18,6 +18,7 @@ simulation *init_simulation(void){
     s->allocated_circles = 1;
     s->total_frames = 0;
 
+    s->constraint_shape = shape;
     s->constraint_center = vector_create(CONSTRAINT_CENTER_X, CONSTRAINT_CENTER_Y);
     s->constraint_radius = CONSTRAINT_RADIUS;
 
@@ -48,40 +49,34 @@ void update_positions(simulation *sim, float dt){
 }
 
 void apply_constraint(simulation *sim){
-    #ifdef SQUARE_BOUNDARY
-    for (size_t i = 0; i < sim->circle_count; i++)
-    {
-        verlet_circle *c = sim->circles + i;
-        if (c->position_current.y - c->radius < sim->constraint_center.y - sim->constraint_radius) c->position_current.y = sim->constraint_center.y - sim->constraint_radius + c->radius;
-        if (c->position_current.y + c->radius > sim->constraint_center.y + sim->constraint_radius) c->position_current.y = sim->constraint_center.y + sim->constraint_radius - c->radius;
-        if (c->position_current.x + c->radius > sim->constraint_center.x + sim->constraint_radius) c->position_current.x = sim->constraint_center.x + sim->constraint_radius - c->radius;
-        if (c->position_current.x - c->radius < sim->constraint_center.x - sim->constraint_radius) c->position_current.x = sim->constraint_center.x - sim->constraint_radius + c->radius;
-    }
-    #endif
+    if (sim->constraint_shape == SQUARE){
+        for (size_t i = 0; i < sim->circle_count; i++)
+        {
+            verlet_circle *c = sim->circles + i;
+            if (c->position_current.y - c->radius < sim->constraint_center.y - sim->constraint_radius) c->position_current.y = sim->constraint_center.y - sim->constraint_radius + c->radius;
+            if (c->position_current.y + c->radius > sim->constraint_center.y + sim->constraint_radius) c->position_current.y = sim->constraint_center.y + sim->constraint_radius - c->radius;
+            if (c->position_current.x + c->radius > sim->constraint_center.x + sim->constraint_radius) c->position_current.x = sim->constraint_center.x + sim->constraint_radius - c->radius;
+            if (c->position_current.x - c->radius < sim->constraint_center.x - sim->constraint_radius) c->position_current.x = sim->constraint_center.x - sim->constraint_radius + c->radius;
+        }
+    }else if (sim->constraint_shape == CIRCLE){
+        for (size_t i = 0; i < sim->circle_count; i++)
+        {
+            verlet_circle *c = sim->circles + i;
+            vector to_circle;
+            to_circle.x = c->position_current.x - sim->constraint_center.x;
+            to_circle.y = c->position_current.y - sim->constraint_center.y;
+            float dist = vector_length(to_circle);
 
-
-
-    #ifdef CIRCLE_BOUNDARY
-    for (size_t i = 0; i < sim->circle_count; i++)
-    {
-        verlet_circle *c = sim->circles + i;
-        vector to_circle;
-        to_circle.x = c->position_current.x - sim->constraint_center.x;
-        to_circle.y = c->position_current.y - sim->constraint_center.y;
-        float dist = vector_length(to_circle);
-
-        if (dist > sim->constraint_radius - (float)c->radius){
-            vector n = {
-                .x = to_circle.x / dist,
-                .y = to_circle.y / dist
-            };
-            c->position_current.x = sim->constraint_center.x + n.x * (sim->constraint_radius - (float)(c->radius));
-            c->position_current.y = sim->constraint_center.y + n.y * (sim->constraint_radius - (float)(c->radius));
+            if (dist > sim->constraint_radius - (float)c->radius){
+                vector n = {
+                    .x = to_circle.x / dist,
+                    .y = to_circle.y / dist
+                };
+                c->position_current.x = sim->constraint_center.x + n.x * (sim->constraint_radius - (float)(c->radius));
+                c->position_current.y = sim->constraint_center.y + n.y * (sim->constraint_radius - (float)(c->radius));
+            }
         }
     }
-    #endif
-    
-
 }
 
 void solve_circle_collision(verlet_circle *c1, verlet_circle *c2){
