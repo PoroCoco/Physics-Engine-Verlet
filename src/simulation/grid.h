@@ -2,7 +2,7 @@
 #define _GRID_H__
 
 //How many elements are allocated at the creation of the dynamics arrays. 
-#define START_ALLOCATED 1024
+#define START_ALLOCATED 2
 
 #include "misc.h"
 

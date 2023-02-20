@@ -78,7 +78,7 @@ int main(int argc, char* argv[]) {
             add_circle(sim, 4+(rand()%(CIRCLE_RADIUS-4)), x, y, rainbow_color(sim_get_object_count(sim)), 0, 0);
         }
         
-        // update_simulation(sim, 1/60.0);
+        update_simulation(sim, 1/60.0);
         render_simulation(gui, sim);
         render_gui(gui);
 
