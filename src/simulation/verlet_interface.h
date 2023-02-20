@@ -33,6 +33,10 @@ unsigned int sim_get_grid_height(verlet_sim_t *sim);
 
 unsigned int sim_get_grid_width(verlet_sim_t *sim);
 
+unsigned int sim_get_width(verlet_sim_t *sim);
+
+unsigned int sim_get_height(verlet_sim_t *sim);
+
 verlet_circle *sim_get_nth_circle(verlet_sim_t *sim, unsigned int n);
 
 
@@ -44,6 +48,8 @@ void destroy_simulation(verlet_sim_t *s);
 color_t rainbow_color(float t);
 
 color_t random_color(void);
+
+void sim_save_current_state(verlet_sim_t *sim, char* filename);
 
 
 #endif // _VERLET_INTERFACE_H__

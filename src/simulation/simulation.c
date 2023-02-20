@@ -277,3 +277,11 @@ unsigned int sim_get_grid_width(verlet_sim_t *sim){
 verlet_circle *sim_get_nth_circle(verlet_sim_t *sim, unsigned int n){
     return sim->circles + n;
 }
+
+unsigned int sim_get_width(verlet_sim_t *sim){
+    return sim->width;
+}
+
+unsigned int sim_get_height(verlet_sim_t *sim){
+    return sim->height;
+}

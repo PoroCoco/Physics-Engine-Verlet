@@ -30,9 +30,9 @@ include_directories(./src/graphic)
 ############################# SRC #############################
 
 
-add_executable(verlet_circle src/simulation/circle_verlet.c src/graphic/verlet.c src/graphic/graphics.c src/graphic/error_handler.c)
+add_executable(verlet_circle src/simulation/circle_verlet.c src/graphic/verlet.c src/graphic/graphics.c src/simulation/error_handler.c)
 
-add_library(verlet src/simulation/error_handler.c src/simulation/circle_verlet.c src/simulation/simulation.c src/simulation/color.c src/simulation/grid.c)
+add_library(verlet src/simulation/error_handler.c src/simulation/circle_verlet.c src/simulation/simulation.c src/simulation/color.c src/simulation/grid.c src/simulation/save.c)
 
 target_link_libraries(verlet m pthread)
 target_link_libraries(verlet_circle ${SDL2_ALL_LIBS} m verlet)

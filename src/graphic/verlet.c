@@ -43,6 +43,11 @@ int main(int argc, char* argv[]) {
                 case SDL_KEYDOWN:
                     switch (event.key.keysym.sym)
                     {
+                    case SDLK_s:
+                        printf("s pressed, saving simulation\n");
+                        sim_save_current_state(sim, "saved.txt");
+                        continue;
+                    
                     case SDLK_ESCAPE:
                         printf("Esc pressed, closing simulation\n");
                         program_launched = false;
