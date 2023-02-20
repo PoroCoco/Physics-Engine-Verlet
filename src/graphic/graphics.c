@@ -1,5 +1,8 @@
 #include "graphics.h"
 #include "error_handler.h"
+#include "config.h"
+#include "verlet_interface.h"
+#include "circle_verlet.h"
 #include <stdio.h>
 
 void gui_exit_with_error(const char *message, struct gui *gui){
@@ -101,48 +104,48 @@ draw_circle(SDL_Renderer * renderer, int x, int y, int radius)
     return status;
 }
 
-void draw_grid(struct gui *gui, simulation *sim){
+void draw_grid(struct gui *gui, verlet_sim_t *sim){
     SDL_SetRenderDrawColor(gui->renderer, 100, 100, 100, SDL_ALPHA_OPAQUE);
-    for (size_t y = 0; y < sim->grid->height; y++){
-        SDL_RenderDrawLine(gui->renderer, 0, y*(WINDOW_HEIGHT/sim->grid->height), WINDOW_WIDTH, (y)*(WINDOW_HEIGHT/sim->grid->height));
+    for (size_t y = 0; y < sim_get_grid_height(sim); y++){
+        SDL_RenderDrawLine(gui->renderer, 0, y*(WINDOW_HEIGHT/sim_get_grid_height(sim)), WINDOW_WIDTH, (y)*(WINDOW_HEIGHT/sim_get_grid_height(sim)));
     }
 
-    for (size_t x = 0; x < sim->grid->width; x++){
-        SDL_RenderDrawLine(gui->renderer, x*(WINDOW_WIDTH/sim->grid->width), 0, x*(WINDOW_WIDTH/sim->grid->width), WINDOW_HEIGHT);
+    for (size_t x = 0; x < sim_get_grid_width(sim); x++){
+        SDL_RenderDrawLine(gui->renderer, x*(WINDOW_WIDTH/sim_get_grid_width(sim)), 0, x*(WINDOW_WIDTH/sim_get_grid_width(sim)), WINDOW_HEIGHT);
     }
 }
 
-void render_simulation(struct gui *gui, simulation *sim){
+void render_simulation(struct gui *gui, verlet_sim_t *sim){
     SDL_SetRenderDrawColor(gui->renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
     SDL_RenderClear(gui->renderer);
 
     
-    if(sim->constraint_shape == CIRCLE){
+    if(sim_get_shape(sim) == CIRCLE){
         SDL_SetRenderDrawColor(gui->renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
-        draw_circle(gui->renderer, sim->constraint_center.x, sim->constraint_center.y, sim->constraint_radius);
-    }else if (sim->constraint_shape == SQUARE){
+        draw_circle(gui->renderer, sim_get_constraint_x(sim), sim_get_constraint_y(sim), sim_get_constraint_radius(sim));
+    }else if (sim_get_shape(sim) == SQUARE){
         SDL_SetRenderDrawColor(gui->renderer, 125, 125, 125, SDL_ALPHA_OPAQUE);
-        SDL_Rect rectangle = {.x = sim->constraint_center.x - sim->constraint_radius, .y = sim->constraint_center.y - sim->constraint_radius, .h = sim->constraint_radius * 2, .w = sim->constraint_radius * 2};
+        SDL_Rect rectangle = {.x = sim_get_constraint_x(sim) - sim_get_constraint_radius(sim), .y = sim_get_constraint_y(sim) - sim_get_constraint_radius(sim), .h = sim_get_constraint_radius(sim) * 2, .w = sim_get_constraint_radius(sim) * 2};
         SDL_RenderFillRect(gui->renderer, &rectangle);
     }
 
     
 
-    SDL_Rect *circles_rectangles = malloc(sizeof(SDL_Rect) * sim->circle_count);
+    // SDL_Rect *circles_rectangles = malloc(sizeof(SDL_Rect) * sim_get_object_count(sim));
 
-    for (size_t i = 0; i < sim->circle_count; i++)
+    for (size_t i = 0; i < sim_get_object_count(sim); i++)
     {
-        verlet_circle *c = sim->circles + i;
+        verlet_circle *c = sim_get_nth_circle(sim, i);
         if (c->position_current.x > WINDOW_WIDTH || c->position_current.x < 0) continue;
         if (c->position_current.y > WINDOW_HEIGHT || c->position_current.y < 0) continue;
         SDL_SetRenderDrawColor(gui->renderer, c->color.r, c->color.g, c->color.b, SDL_ALPHA_OPAQUE);
-        SDL_Rect r = {.x = c->position_current.x - c->radius, .y = c->position_current.y - c->radius, .h = 2 * c->radius, .w = 2 * c->radius};
-        circles_rectangles[i] = r;
-        // draw_circle(gui->renderer, (int)c->position_current.x, (int)c->position_current.y, c->radius);
+        // SDL_Rect r = {.x = c->position_current.x - c->radius, .y = c->position_current.y - c->radius, .h = 2 * c->radius, .w = 2 * c->radius};
+        // circles_rectangles[i] = r;
+        draw_circle(gui->renderer, (int)c->position_current.x, (int)c->position_current.y, c->radius);
     }
 
-    SDL_RenderFillRects(gui->renderer, circles_rectangles, sim->circle_count);
-    free(circles_rectangles);
+    // SDL_RenderFillRects(gui->renderer, circles_rectangles, sim_get_object_count(sim));
+    // free(circles_rectangles);
 
     draw_grid(gui, sim);
 

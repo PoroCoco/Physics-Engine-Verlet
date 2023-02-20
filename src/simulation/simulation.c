@@ -1,16 +1,36 @@
-#include "simulation.h"
+#include "verlet_interface.h"
 #include "circle_verlet.h"
 #include "error_handler.h"
 #include <time.h>
 #include <stdio.h>
 #include <pthread.h>
 
+#include <stdlib.h>
+#include "misc.h"
+#include "circle_verlet.h"
+#include "grid.h"
+
+typedef struct verlet_sim {
+    size_t circle_count;
+    size_t allocated_circles;
+    verlet_circle *circles;
+
+    struct grid *grid;
+    vector constraint_center;
+    uint constraint_radius;
+
+    uint total_frames;
+    enum constraint_shape constraint_shape;
+
+    uint width;
+    uint height;
+} verlet_sim_t;
 
 
 vector gravity = {.x = 0, .y = 1000};
 
-simulation *init_simulation(enum constraint_shape shape){
-    simulation *s = malloc(sizeof(simulation));
+verlet_sim_t *init_simulation(enum constraint_shape shape, float constraint_center_x, float constraint_center_y, unsigned int constraint_radius, unsigned int width, unsigned int height){
+    verlet_sim_t *s = malloc(sizeof(verlet_sim_t));
     _check_malloc(s, __LINE__, __FILE__);
     s->circle_count = 0;
     s->circles = malloc(sizeof(verlet_circle));
@@ -19,36 +39,38 @@ simulation *init_simulation(enum constraint_shape shape){
     s->total_frames = 0;
 
     s->constraint_shape = shape;
-    s->constraint_center = vector_create(CONSTRAINT_CENTER_X, CONSTRAINT_CENTER_Y);
-    s->constraint_radius = CONSTRAINT_RADIUS;
+    s->constraint_center = vector_create(constraint_center_x, constraint_center_y);
+    s->constraint_radius = constraint_radius;
 
     s->grid = create_grid(GRID_WIDTH, GRID_HEIGHT);    
+    s->height = height;
+    s->width = width;
 
     return s;
 }
 
-void destroy_simulation(simulation *s){
+void destroy_simulation(verlet_sim_t *s){
     if (!s) return;
     if (s->circles) free(s->circles);
     if (s->grid) destroy_grid(s->grid);
     free(s);
 }
 
-void apply_gravity(simulation *sim){
+void apply_gravity(verlet_sim_t *sim){
     for (size_t i = 0; i < sim->circle_count; i++)
     {
         accelerate_circle(sim->circles + i, &gravity);
     }
 }
 
-void update_positions(simulation *sim, float dt){
+void update_positions(verlet_sim_t *sim, float dt){
     for (size_t i = 0; i < sim->circle_count; i++)
     {
         update_position_circle(sim->circles + i, dt);
     }
 }
 
-void apply_constraint(simulation *sim){
+void apply_constraint(verlet_sim_t *sim){
     if (sim->constraint_shape == SQUARE){
         for (size_t i = 0; i < sim->circle_count; i++)
         {
@@ -107,7 +129,7 @@ void solve_circle_collision(verlet_circle *c1, verlet_circle *c2){
 }
 
 struct arguments_collision {
-    simulation *sim;
+    verlet_sim_t *sim;
     uint col_begin;
     uint col_end;
 };
@@ -115,7 +137,7 @@ struct arguments_collision {
 void *solve_cell_collisions(void * thread_data){
     // printf("entering solveing\n");
     struct arguments_collision *arg_c = (struct arguments_collision*) thread_data;
-    simulation *sim = arg_c->sim;
+    verlet_sim_t *sim = arg_c->sim;
     for (size_t x = arg_c->col_begin; x < arg_c->col_end; x++)
     {
         for (size_t y = 0; y < sim->grid->height; y++)
@@ -142,7 +164,7 @@ void *solve_cell_collisions(void * thread_data){
     return NULL;
 }
 
-void update_grid(simulation *sim){
+void update_grid(verlet_sim_t *sim){
     //resets the dynamic array of indexes
     for (size_t y = 0; y < sim->grid->height; y++){
         for (size_t x = 0; x < sim->grid->width; x++){
@@ -152,14 +174,14 @@ void update_grid(simulation *sim){
 
     for (size_t i = 0; i < sim->circle_count; i++)
     {
-        uint col = (int)(sim->circles[i].position_current.x /(WINDOW_WIDTH/sim->grid->width));
-        uint row = (int)(sim->circles[i].position_current.y /(WINDOW_HEIGHT/sim->grid->height));
+        uint col = (int)(sim->circles[i].position_current.x /(sim->width/sim->grid->width));
+        uint row = (int)(sim->circles[i].position_current.y /(sim->height/sim->grid->height));
         add_grid(sim->grid, row, col, i);
     }
 
 }
 
-void solve_threaded_collision(simulation *sim){
+void solve_threaded_collision(verlet_sim_t *sim){
     pthread_t threads[THREAD_COUNT];
 
     int ret;
@@ -181,13 +203,9 @@ void solve_threaded_collision(simulation *sim){
 }
 
 
-void update_simulation(simulation *sim, float dt){
+void update_simulation(verlet_sim_t *sim, float dt){
 
     float sub_dt = dt/(float)SUB_STEPS;
-    if (sim->circle_count < 2000) add_circle(sim, CIRCLE_RADIUS, WINDOW_WIDTH/2.0, WINDOW_HEIGHT/2.0, random_color(), 0, 0);
-    if (sim->circle_count < 2000) add_circle(sim, CIRCLE_RADIUS, WINDOW_WIDTH/2.0, WINDOW_HEIGHT/2.0, random_color(), 0, 0);
-    if (sim->circle_count < 2000) add_circle(sim, CIRCLE_RADIUS, WINDOW_WIDTH/2.0, WINDOW_HEIGHT/2.0, random_color(), 0, 0);
-    if (sim->circle_count < 2000) add_circle(sim, CIRCLE_RADIUS, WINDOW_WIDTH/2.0, WINDOW_HEIGHT/2.0, random_color(), 0, 0);
     for (size_t i = 0; i < SUB_STEPS; i++)
     {
         apply_gravity(sim);
@@ -196,11 +214,11 @@ void update_simulation(simulation *sim, float dt){
         solve_threaded_collision(sim);
         update_positions(sim, sub_dt);
     }
-
+    sim->total_frames++;
 }
 
 
-void add_circle(simulation *sim, uint radius, float px, float py, color_t color, float acc_x, float acc_y){
+void add_circle(verlet_sim_t *sim, uint radius, float px, float py, color_t color, float acc_x, float acc_y){
     verlet_circle new_circle = {
         .radius = radius,
         .position_old.x = px,
@@ -222,4 +240,40 @@ void add_circle(simulation *sim, uint radius, float px, float py, color_t color,
         sim->allocated_circles *= 2;
     }
 
+}
+
+size_t sim_get_current_step(verlet_sim_t *sim){
+    return sim->total_frames;
+}
+
+size_t sim_get_object_count(verlet_sim_t *sim){
+    return sim->circle_count;
+}
+
+enum constraint_shape sim_get_shape(verlet_sim_t *sim){
+    return sim->constraint_shape;
+}
+
+unsigned int sim_get_constraint_x(verlet_sim_t *sim){
+    return sim->constraint_center.x;
+}
+
+unsigned int sim_get_constraint_y(verlet_sim_t *sim){
+    return sim->constraint_center.y;
+}
+
+unsigned int sim_get_constraint_radius(verlet_sim_t *sim){
+    return sim->constraint_radius;
+}
+
+unsigned int sim_get_grid_height(verlet_sim_t *sim){
+    return sim->grid->height;
+}
+
+unsigned int sim_get_grid_width(verlet_sim_t *sim){
+    return sim->grid->width;
+}
+
+verlet_circle *sim_get_nth_circle(verlet_sim_t *sim, unsigned int n){
+    return sim->circles + n;
 }

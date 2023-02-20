@@ -4,15 +4,15 @@
 #include <math.h>
 
 #include "graphics.h"
-#include "simulation.h"
+#include "config.h"
+#include "verlet_interface.h"
 
-extern vector gravity;
 
 int main(int argc, char* argv[]) {
 
     struct gui *gui = init_gui();
-    simulation *sim = init_simulation(CIRCLE);
-    
+    verlet_sim_t *sim = init_simulation(CIRCLE, CONSTRAINT_CENTER_X, CONSTRAINT_CENTER_Y, CONSTRAINT_RADIUS, WINDOW_WIDTH, WINDOW_HEIGHT);
+
     // add_circle(sim, CIRCLE_RADIUS, 400, 300, 0, 0, 255, 0, 0);
 
     srand(time(NULL));
@@ -23,7 +23,7 @@ int main(int argc, char* argv[]) {
 
     while(program_launched)
     {
-        uint start_time = SDL_GetPerformanceCounter();
+        unsigned int start_time = SDL_GetPerformanceCounter();
         while(SDL_PollEvent(&event))
         {
             switch(event.type)
@@ -43,11 +43,6 @@ int main(int argc, char* argv[]) {
                 case SDL_KEYDOWN:
                     switch (event.key.keysym.sym)
                     {
-                    case SDLK_g:
-                        printf("inverting gravity\n");
-                        gravity.y = gravity.y*(-1); 
-                        continue;
-
                     case SDLK_ESCAPE:
                         printf("Esc pressed, closing simulation\n");
                         program_launched = false;
@@ -69,14 +64,14 @@ int main(int argc, char* argv[]) {
         if(button_mousedown){
             int x,y;
             SDL_GetMouseState( &x, &y );
-            add_circle(sim, 4+(rand()%(CIRCLE_RADIUS-4)), x, y, rainbow_color(sim->circle_count), 0, 0);
+            add_circle(sim, 4+(rand()%(CIRCLE_RADIUS-4)), x, y, rainbow_color(sim_get_object_count(sim)), 0, 0);
         }
         
         update_simulation(sim, 1/60.0);
         render_simulation(gui, sim);
         render_gui(gui);
 
-        uint end_time = SDL_GetPerformanceCounter();
+        unsigned int end_time = SDL_GetPerformanceCounter();
         float freq_time = SDL_GetPerformanceFrequency();
         float elapsedMS = (end_time - start_time) / freq_time*1000.0;
         float fps_delay = floor(16.666 - elapsedMS);
@@ -88,11 +83,9 @@ int main(int argc, char* argv[]) {
             // program_launched = false;
         }
 
-        if(sim->total_frames%10 == 0){
-            printf("frame %u, %zu objects in simulation. Frame time : %.3f\n", sim->total_frames, sim->circle_count, elapsedMS);
+        if(sim_get_current_step(sim)%10 == 0){
+            printf("frame %zu, %zu objects in simulation. Frame time : %.3f\n", sim_get_current_step(sim), sim_get_object_count(sim), elapsedMS);
         }
-
-        sim->total_frames++;
     }
 
     destroy_simulation(sim);

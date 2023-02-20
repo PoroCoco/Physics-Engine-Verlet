@@ -1,4 +1,4 @@
-#include "color.h"
+#include "verlet_interface.h"
 #include <math.h>
 #include <stdlib.h>
 

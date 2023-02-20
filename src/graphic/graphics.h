@@ -7,7 +7,7 @@
     #include <SDL.h>
 #endif
 
-#include "simulation.h"
+#include "verlet_interface.h"
 
 
 struct gui{
@@ -23,7 +23,7 @@ void render_gui(struct gui *gui);
 /// @brief updates the gui's renderer with the circles in the simulation
 /// @param gui the gui to update
 /// @param sim the simulation with the informations
-void render_simulation(struct gui *gui, simulation *sim);
+void render_simulation(struct gui *gui, verlet_sim_t *sim);
 
 
 #endif // _GRAPHICS_H__

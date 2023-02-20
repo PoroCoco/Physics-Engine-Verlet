@@ -1,7 +1,11 @@
 #ifndef _CIRCLE_VERLET_H__
 #define _CIRCLE_VERLET_H__
 
-#include "color.h"
+typedef struct color {
+    unsigned char r;
+    unsigned char g;
+    unsigned char b;
+} color_t;
 
 typedef struct vector{
     float x;
