@@ -138,11 +138,14 @@ void *solve_cell_collisions(void * thread_data){
     // printf("entering solveing\n");
     struct arguments_collision *arg_c = (struct arguments_collision*) thread_data;
     verlet_sim_t *sim = arg_c->sim;
+    // printf("thread %ld args = sim:%p, begin:%u, end:%u\n",  pthread_self(), arg_c->sim, arg_c->col_begin, arg_c->col_end);
+    // printf("thread %ld working on %u to %u\n", pthread_self(), arg_c->col_begin, arg_c->col_end);
     for (size_t x = arg_c->col_begin; x < arg_c->col_end; x++)
     {
         for (size_t y = 0; y < sim->grid->height; y++)
         {
             // if (sim->grid->grid[y][x].count > 0) printf("%zu objects at cord %zu,%zu\n", sim->grid->grid[y][x].count, x, y);
+            // printf("thread %d working on %zu,%zu\n", pthread_self(), x, y);
             for (size_t i = 0; i < sim->grid->grid[y][x].count; i++)
             {
                 for (int dx = -1; dx < 1; dx++)
@@ -183,21 +186,31 @@ void update_grid(verlet_sim_t *sim){
 
 void solve_threaded_collision(verlet_sim_t *sim){
     pthread_t threads[THREAD_COUNT];
+    struct arguments_collision *args_to_free[THREAD_COUNT];
 
     int ret;
     for (size_t i = 0; i < THREAD_COUNT; i++)
     {
-        struct arguments_collision arg_c = {.sim = sim, .col_begin = i * (sim->grid->width/THREAD_COUNT), .col_end = ((i+1)*(sim->grid->width/THREAD_COUNT))};
-        
-        ret = pthread_create(threads+i, NULL, solve_cell_collisions, (void *) &arg_c);   
+        struct arguments_collision *args = malloc(sizeof(struct arguments_collision));
+        args->sim = sim;
+        args->col_begin = i * (sim->grid->width/THREAD_COUNT);
+        args->col_end = ((i+1)*(sim->grid->width/THREAD_COUNT));
+        // printf("sending thread %zu with section %u to %u\n", i, args.col_begin, args.col_end);
+        ret = pthread_create(threads+i, NULL, solve_cell_collisions, (void *) args);   
         if(ret) {
             fprintf(stderr, "Thread creation error %d\n",ret);
         }
+        args_to_free[i] = args;
     }
 
     for (size_t i = 0; i < THREAD_COUNT; i++)
     {
         pthread_join(threads[i], NULL);
+    }
+
+    for (size_t i = 0; i < THREAD_COUNT; i++)
+    {
+        free(args_to_free[i]);
     }
     
 }
