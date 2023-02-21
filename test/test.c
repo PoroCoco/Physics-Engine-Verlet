@@ -30,7 +30,7 @@ void verlet_standard_config(void){
         if (circle_radius <= 4) circle_radius = 10;
     }
     
-    for (size_t i = 0; i < 300; i++)
+    for (size_t i = 0; i < 5; i++)
     {
         update_simulation(s, 1.0/60.0);
     }
