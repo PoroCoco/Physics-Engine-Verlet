@@ -75,16 +75,21 @@ int main(int argc, char* argv[]) {
         if(button_mousedown){
             int x,y;
             SDL_GetMouseState( &x, &y );
-            add_circle(sim, 4+(rand()%(CIRCLE_RADIUS-4)), x, y, rainbow_color(sim_get_object_count(sim)), 0, 0);
+            add_circle(sim, CIRCLE_RADIUS, x, y, rainbow_color(sim_get_object_count(sim)), 0, 0);
+            // add_circle(sim, 4+(rand()%(CIRCLE_RADIUS-4)), x, y, rainbow_color(sim_get_object_count(sim)), 0, 0);
         }
+        // add_circle(sim, CIRCLE_RADIUS, CONSTRAINT_CENTER_X, CONSTRAINT_CENTER_Y, rainbow_color(sim_get_object_count(sim)), 0, 0);
         
+        unsigned int start_time_simulation = SDL_GetPerformanceCounter();
         update_simulation(sim, 1/60.0);
+        unsigned int end_time_simulation = SDL_GetPerformanceCounter();
         render_simulation(gui, sim);
         render_gui(gui);
 
         unsigned int end_time = SDL_GetPerformanceCounter();
         float freq_time = SDL_GetPerformanceFrequency();
         float elapsedMS = (end_time - start_time) / freq_time*1000.0;
+        float elapsedMS_simulation = (end_time_simulation - start_time_simulation) / freq_time*1000.0;
         float fps_delay = floor(16.666 - elapsedMS);
         if(fps_delay>0){
             // printf("freeze for %f\n", fps_delay);
@@ -95,7 +100,7 @@ int main(int argc, char* argv[]) {
         }
 
         if(sim_get_current_step(sim)%10 == 0){
-            printf("frame %zu, %zu objects in simulation. Frame time : %.3f\n", sim_get_current_step(sim), sim_get_object_count(sim), elapsedMS);
+            printf("frame %zu, %zu objects in simulation. Frame time : %.3f, Simulation time : %.3f\n", sim_get_current_step(sim), sim_get_object_count(sim), elapsedMS, elapsedMS_simulation);
         }
     }
 
