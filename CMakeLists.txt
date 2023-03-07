@@ -15,6 +15,37 @@ set(CMAKE_C_FLAGS_RELEASE "-O3 -DNDEBUG")   # use CMake option: -DCMAKE_BUILD_TY
 
 # file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/test/standardSave.txt DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
+############################# CIMGUI ############################
+set(BAKENDS_FOLDER "cimgui/imgui/backends/")
+set(TABLES_SOURCE "cimgui/imgui/imgui_tables.cpp")
+
+include_directories(cimgui/imgui)
+add_definitions("-DIMGUI_DISABLE_OBSOLETE_FUNCTIONS=1")
+
+include_directories(cimgui)
+set(IMGUI_SOURCES 
+cimgui/cimgui.cpp 
+cimgui/imgui/imgui.cpp 
+cimgui/imgui/imgui_draw.cpp 
+cimgui/imgui/imgui_demo.cpp 
+cimgui/imgui/imgui_widgets.cpp
+${TABLES_SOURCE} 
+)
+add_definitions("-DIMGUI_IMPL_API=extern \"C\" ")
+add_compile_definitions("IMGUI_IMPL_OPENGL_LOADER_GL3W")
+
+list(APPEND IMGUI_SOURCES ${BAKENDS_FOLDER}imgui_impl_sdl2.cpp)
+
+#opengl3
+list(APPEND IMGUI_SOURCES ${BAKENDS_FOLDER}imgui_impl_opengl3.cpp)
+include_directories(cimgui/imgui/examples/libs/gl3w)
+list(APPEND IMGUI_LIBRARIES GL)
+
+
+###
+add_library(cimgui_sdl SHARED ${IMGUI_SOURCES})
+
+
 ############################# SDL2 ############################
 
 ## use a CMake3 package to solve SDL2 dependencies
@@ -34,6 +65,10 @@ include_directories(./src/graphic)
 
 
 add_executable(verlet_circle src/simulation/circle_verlet.c src/graphic/verlet.c src/graphic/graphics.c src/simulation/error_handler.c)
+
+target_compile_definitions(verlet_circle PUBLIC -DCIMGUI_USE_OPENGL3 -DCIMGUI_USE_SDL2)
+target_link_libraries(verlet_circle ${IMGUI_SDL_LIBRARY} cimgui_sdl)
+
 
 add_library(verlet src/simulation/error_handler.c src/simulation/circle_verlet.c src/simulation/simulation.c src/simulation/color.c src/simulation/grid.c src/simulation/save.c)
 
