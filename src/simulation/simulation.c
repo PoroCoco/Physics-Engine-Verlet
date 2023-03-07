@@ -24,10 +24,11 @@ typedef struct verlet_sim {
 
     uint width;
     uint height;
+    vector gravity;
+
 } verlet_sim_t;
 
 
-vector gravity = {.x = 0, .y = 1000};
 
 verlet_sim_t *init_simulation(enum constraint_shape shape, float constraint_center_x, float constraint_center_y, unsigned int constraint_radius, unsigned int width, unsigned int height, unsigned int grid_width, unsigned int grid_height){
     verlet_sim_t *s = malloc(sizeof(verlet_sim_t));
@@ -46,6 +47,8 @@ verlet_sim_t *init_simulation(enum constraint_shape shape, float constraint_cent
     s->height = height;
     s->width = width;
 
+    vector gravity = {.x = 0, .y = 1000};
+    s->gravity = gravity;
     return s;
 }
 
@@ -59,7 +62,7 @@ void destroy_simulation(verlet_sim_t *s){
 void apply_gravity(verlet_sim_t *sim){
     for (size_t i = 0; i < sim->circle_count; i++)
     {
-        accelerate_circle(sim->circles + i, &gravity);
+        accelerate_circle(sim->circles + i, &(sim->gravity));
     }
 }
 
@@ -215,6 +218,17 @@ void solve_threaded_collision(verlet_sim_t *sim){
     
 }
 
+void seq_col(verlet_sim_t *sim){
+    for (size_t i = 0; i < sim->circle_count; i++)
+    {
+        for (size_t j = 0; j < sim->circle_count; j++)
+        {
+            solve_circle_collision(&sim->circles[i], &sim->circles[j]);
+        }
+        
+    }
+    
+}
 
 void update_simulation(verlet_sim_t *sim, float dt){
 
@@ -225,6 +239,7 @@ void update_simulation(verlet_sim_t *sim, float dt){
         apply_constraint(sim);
         update_grid(sim);
         solve_threaded_collision(sim);
+        // seq_col(sim);
         update_positions(sim, sub_dt);
     }
     sim->total_frames++;
@@ -297,4 +312,13 @@ unsigned int sim_get_width(verlet_sim_t *sim){
 
 unsigned int sim_get_height(verlet_sim_t *sim){
     return sim->height;
+}
+
+
+vector sim_get_gravity(verlet_sim_t *sim){
+    return sim->gravity;
+}
+
+void sim_set_gravity(verlet_sim_t *sim, vector gravity){
+    sim->gravity = gravity;
 }

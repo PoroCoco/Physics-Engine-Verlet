@@ -37,6 +37,10 @@ unsigned int sim_get_width(verlet_sim_t *sim);
 
 unsigned int sim_get_height(verlet_sim_t *sim);
 
+vector sim_get_gravity(verlet_sim_t *sim);
+
+void sim_set_gravity(verlet_sim_t *sim, vector gravity);
+
 verlet_circle *sim_get_nth_circle(verlet_sim_t *sim, unsigned int n);
 
 

@@ -138,7 +138,8 @@ void render_simulation(struct gui *gui, verlet_sim_t *sim){
         verlet_circle *c = sim_get_nth_circle(sim, i);
         if (c->position_current.x > WINDOW_WIDTH || c->position_current.x < 0) continue;
         if (c->position_current.y > WINDOW_HEIGHT || c->position_current.y < 0) continue;
-        SDL_SetRenderDrawColor(gui->renderer, c->color.r, c->color.g, c->color.b, SDL_ALPHA_OPAQUE);
+        color_t clr = rainbow_color((c->position_current.x - c->position_old.x + c->position_current.y - c->position_old.y)/2.0);
+        SDL_SetRenderDrawColor(gui->renderer, clr.r, clr.g, clr.b, SDL_ALPHA_OPAQUE);
         // SDL_Rect r = {.x = c->position_current.x - c->radius, .y = c->position_current.y - c->radius, .h = 2 * c->radius, .w = 2 * c->radius};
         // circles_rectangles[i] = r;
         draw_circle(gui->renderer, (int)c->position_current.x, (int)c->position_current.y, c->radius);

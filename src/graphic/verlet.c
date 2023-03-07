@@ -12,7 +12,7 @@
 int main(int argc, char* argv[]) {
 
     struct gui *gui = init_gui();
-    verlet_sim_t *sim = init_simulation(CIRCLE, CONSTRAINT_CENTER_X, CONSTRAINT_CENTER_Y, CONSTRAINT_RADIUS, WINDOW_WIDTH, WINDOW_HEIGHT, GRID_WIDTH, GRID_HEIGHT);
+    verlet_sim_t *sim = init_simulation(SQUARE, CONSTRAINT_CENTER_X, CONSTRAINT_CENTER_Y, CONSTRAINT_RADIUS, WINDOW_WIDTH, WINDOW_HEIGHT, GRID_WIDTH, GRID_HEIGHT);
     assert(sim);
 
     printf("loading succesful\n");
@@ -53,6 +53,12 @@ int main(int argc, char* argv[]) {
                     case SDLK_u:
                         update_simulation(sim, 1/60.0);
                         continue;
+
+                    case SDLK_g:
+                        vector gravity = sim_get_gravity(sim);
+                        gravity.y *= -1;
+                        sim_set_gravity(sim, gravity);
+                        continue;
                     
                     case SDLK_ESCAPE:
                         printf("Esc pressed, closing simulation\n");
@@ -78,7 +84,10 @@ int main(int argc, char* argv[]) {
             add_circle(sim, CIRCLE_RADIUS, x, y, rainbow_color(sim_get_object_count(sim)), 0, 0);
             // add_circle(sim, 4+(rand()%(CIRCLE_RADIUS-4)), x, y, rainbow_color(sim_get_object_count(sim)), 0, 0);
         }
-        // add_circle(sim, CIRCLE_RADIUS, CONSTRAINT_CENTER_X, CONSTRAINT_CENTER_Y, rainbow_color(sim_get_object_count(sim)), 0, 0);
+        if (sim_get_object_count(sim) < 0) add_circle(sim, CIRCLE_RADIUS, CONSTRAINT_CENTER_X+300, CONSTRAINT_CENTER_Y+300, rainbow_color(sim_get_object_count(sim)), 0, 0);
+        if (sim_get_object_count(sim) < 0) add_circle(sim, CIRCLE_RADIUS, CONSTRAINT_CENTER_X-150, CONSTRAINT_CENTER_Y-150, rainbow_color(sim_get_object_count(sim)), 0, 0);
+        if (sim_get_object_count(sim) < 0) add_circle(sim, CIRCLE_RADIUS, CONSTRAINT_CENTER_X-150, CONSTRAINT_CENTER_Y+150, rainbow_color(sim_get_object_count(sim)), 0, 0);
+        if (sim_get_object_count(sim) < 0) add_circle(sim, CIRCLE_RADIUS, CONSTRAINT_CENTER_X+150, CONSTRAINT_CENTER_Y-150, rainbow_color(sim_get_object_count(sim)), 0, 0);
         
         unsigned int start_time_simulation = SDL_GetPerformanceCounter();
         update_simulation(sim, 1/60.0);

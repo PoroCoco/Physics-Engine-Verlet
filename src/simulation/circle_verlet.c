@@ -31,6 +31,6 @@ void update_position_circle(verlet_circle *c, float dt){
 
 
 void accelerate_circle(verlet_circle *c, vector *acc){
-    c->acceleration.x += acc->x;
     c->acceleration.y += acc->y;
+    c->acceleration.x += acc->x;
 }
