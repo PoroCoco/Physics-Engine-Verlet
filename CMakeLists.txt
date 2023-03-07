@@ -13,7 +13,7 @@ set(CMAKE_C_FLAGS_DEBUG "-g")    # use CMake option: -DCMAKE_BUILD_TYPE=DEBUG
 set(CMAKE_C_FLAGS_RELEASE "-O3 -DNDEBUG")   # use CMake option: -DCMAKE_BUILD_TYPE=RELEASE
 
 
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/test/standardSave.txt DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+# file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/test/standardSave.txt DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 ############################# SDL2 ############################
 
