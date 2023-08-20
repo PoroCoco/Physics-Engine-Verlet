@@ -25,5 +25,6 @@ void render_gui(struct gui *gui);
 /// @param sim the simulation with the informations
 void render_simulation(struct gui *gui, verlet_sim_t *sim);
 
+void sim_render(verlet_sim_t *sim);
 
 #endif // _GRAPHICS_H__

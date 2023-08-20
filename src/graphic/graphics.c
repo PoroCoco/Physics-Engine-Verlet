@@ -1,8 +1,10 @@
 #include "graphics.h"
-#include "error_handler.h"
 #include "config.h"
-#include "verlet_interface.h"
-#include "circle_verlet.h"
+#include "../simulation/error_handler.h"
+#include "../simulation/verlet_interface.h"
+#include "../simulation/circle_verlet.h"
+
+#include <GL/gl.h>
 #include <stdio.h>
 
 void gui_exit_with_error(const char *message, struct gui *gui){
@@ -27,7 +29,7 @@ struct gui* init_gui(void){
         gui_exit_with_error("SDL Initialisation", gui);
     }
 
-    gui->window = SDL_CreateWindow("Verlet Simulation", 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_FULLSCREEN);
+    gui->window = SDL_CreateWindow("Verlet Simulation", 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT,  SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
     if (gui->window == NULL){
         gui_exit_with_error("Window creation failed", gui);
     }
@@ -58,51 +60,6 @@ void render_gui(struct gui *gui){
 
 
 
-//How to draw filled circle with SDL2 : https://gist.github.com/Gumichan01/332c26f6197a432db91cc4327fcabb1c
-int
-draw_circle(SDL_Renderer * renderer, int x, int y, int radius)
-{
-    int offsetx, offsety, d;
-    int status;
-
-    offsetx = 0;
-    offsety = radius;
-    d = radius -1;
-    status = 0;
-
-    while (offsety >= offsetx) {
-
-        status += SDL_RenderDrawLine(renderer, x - offsety, y + offsetx,
-                                     x + offsety, y + offsetx);
-        status += SDL_RenderDrawLine(renderer, x - offsetx, y + offsety,
-                                     x + offsetx, y + offsety);
-        status += SDL_RenderDrawLine(renderer, x - offsetx, y - offsety,
-                                     x + offsetx, y - offsety);
-        status += SDL_RenderDrawLine(renderer, x - offsety, y - offsetx,
-                                     x + offsety, y - offsetx);
-
-        if (status < 0) {
-            status = -1;
-            break;
-        }
-
-        if (d >= 2*offsetx) {
-            d -= 2*offsetx + 1;
-            offsetx +=1;
-        }
-        else if (d < 2 * (radius - offsety)) {
-            d += 2 * offsety - 1;
-            offsety -= 1;
-        }
-        else {
-            d += 2 * (offsety - offsetx - 1);
-            offsety -= 1;
-            offsetx += 1;
-        }
-    }
-
-    return status;
-}
 
 void draw_grid(struct gui *gui, verlet_sim_t *sim){
     SDL_SetRenderDrawColor(gui->renderer, 100, 100, 100, SDL_ALPHA_OPAQUE);
@@ -149,5 +106,70 @@ void render_simulation(struct gui *gui, verlet_sim_t *sim){
     // free(circles_rectangles);
 
     draw_grid(gui, sim);
+
+}
+
+
+void draw_circle(float cx, float cy, float r, int num_segments) {
+    glBegin(GL_TRIANGLE_FAN);
+    for (int i = 0; i < num_segments; ++i) {
+        float theta = 2.0f * 3.1415926f * (float)i / (float)num_segments;
+        float x = r * cos(theta);
+        float y = r * sin(theta);
+        glVertex2f(x + cx, y + cy);
+    }
+    glEnd();
+}
+
+void draw_squares(float top_left_x, float top_left_y, float bottom_right_x, float bottom_right_y) {
+    glBegin(GL_TRIANGLES);
+    
+    glVertex2f(bottom_right_x, top_left_y);
+    glVertex2f(bottom_right_x, bottom_right_y);
+    glVertex2f(top_left_x, bottom_right_y);
+    glVertex2f(bottom_right_x, top_left_y);
+    glVertex2f(top_left_x, bottom_right_y);
+    glVertex2f(top_left_x, top_left_y);
+    
+    glEnd();
+}
+
+void sim_render(verlet_sim_t *sim){
+    uint sim_size = sim_get_height(sim);
+
+    if(sim_get_shape(sim) == CIRCLE){
+		glColor4f(1.0, 1.0, 1.0, 1.0);
+        draw_circle(0., 0., sim_get_constraint_radius(sim)*2.0/sim_get_height(sim), 300);
+    }else if (sim_get_shape(sim) == SQUARE){
+		glColor4f(0.66, 0.66, 0.66, 1.0);
+        double x = (2.0 * sim_get_constraint_x(sim) / sim_size) - 1.0;
+        x -= 0.776;
+        double y = (2.0 * sim_get_constraint_y(sim) / sim_size) - 1.0;
+        double radius = sim_get_constraint_radius(sim) * 2.0/sim_size;
+        draw_squares( x - radius, y + radius, x + radius, y - radius);
+    }
+
+    for (size_t i = 0; i < sim_get_object_count(sim); i++)
+    {
+        verlet_circle *c = sim_get_nth_circle(sim, i);
+        double converted_x = (2.0 * c->position_current.x  / sim_size) - 1.0;
+        converted_x -= 0.776;
+        if (converted_x > 1. || converted_x < -1.) continue;
+        double converted_y = (2.0 * c->position_current.y  / sim_size) - 1.0;
+        // Invert the sign as opengl 1 is the top and -1 the bottom of the window
+        converted_y *= -1;
+        if (converted_y > 1. || converted_y < -1.) continue;
+
+        double converted_radius = (2.0 * c->radius / sim_size);
+        // printf("%zu : %lf, %lf -> %lf, %lf\n", i, c->position_current.x, c->position_current.y, converted_x, converted_y);
+        // printf("%d,%d,%d\n", c->color.r, c->color.g, c->color.b);
+		glColor3ub(c->color.r, c->color.g, c->color.b);
+        draw_circle(converted_x, converted_y, converted_radius, 30);
+
+
+        
+
+    }
+
 
 }
