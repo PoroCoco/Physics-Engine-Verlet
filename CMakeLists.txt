@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.0)
 
-project("Verlet" C)
+project("Verlet" C CXX)
 
 # # test
 # include(CTest)
@@ -34,7 +34,6 @@ ${TABLES_SOURCE}
 add_definitions("-DIMGUI_IMPL_API=extern \"C\" ")
 add_compile_definitions("IMGUI_IMPL_OPENGL_LOADER_GL3W")
 
-list(APPEND IMGUI_SOURCES ${BAKENDS_FOLDER}imgui_impl_sdl2.cpp)
 
 #opengl3
 list(APPEND IMGUI_SOURCES ${BAKENDS_FOLDER}imgui_impl_opengl3.cpp)
@@ -43,12 +42,12 @@ list(APPEND IMGUI_LIBRARIES GL)
 
 
 ###
-add_library(cimgui_sdl SHARED ${IMGUI_SOURCES})
 
 
 ############################# SDL2 ############################
 
 ## use a CMake3 package to solve SDL2 dependencies
+list(APPEND IMGUI_SOURCES ${BAKENDS_FOLDER}imgui_impl_sdl2.cpp)
 find_package(SDL2 REQUIRED)
 set(SDL2_ALL_INC ${SDL2_INCLUDE_DIRS})
 set(SDL2_ALL_LIBS ${SDL2_LIBRARIES} ) 
@@ -57,9 +56,15 @@ set(SDL2_ALL_LIBS ${SDL2_LIBRARIES} )
 message(STATUS "SDL2 include dir: ${SDL2_ALL_INC}")
 message(STATUS "SDL2 all libraries: ${SDL2_ALL_LIBS}")
 
+set(IMGUI_SDL_LIBRARY ${SDL2_LIBRARIES})
 include_directories(${SDL2_ALL_INC})
 include_directories(./src/simulation)
 include_directories(./src/graphic)
+
+
+add_library(cimgui_sdl SHARED ${IMGUI_SOURCES})
+target_link_libraries(cimgui_sdl ${IMGUI_LIBRARIES} ${IMGUI_SDL_LIBRARY})
+include_directories(cimgui/generator/output/)
 
 ############################# SRC #############################
 
@@ -67,13 +72,12 @@ include_directories(./src/graphic)
 add_executable(verlet_circle src/simulation/circle_verlet.c src/graphic/verlet.c src/graphic/graphics.c src/simulation/error_handler.c)
 
 target_compile_definitions(verlet_circle PUBLIC -DCIMGUI_USE_OPENGL3 -DCIMGUI_USE_SDL2)
-target_link_libraries(verlet_circle ${IMGUI_SDL_LIBRARY} cimgui_sdl)
 
 
 add_library(verlet src/simulation/error_handler.c src/simulation/circle_verlet.c src/simulation/simulation.c src/simulation/color.c src/simulation/grid.c src/simulation/save.c)
 
 target_link_libraries(verlet m pthread)
-target_link_libraries(verlet_circle ${SDL2_ALL_LIBS} m verlet)
+target_link_libraries(verlet_circle ${SDL2_ALL_LIBS} m verlet ${IMGUI_SDL_LIBRARY} cimgui_sdl)
 
 
 ############################ TESTS TMP ############################
