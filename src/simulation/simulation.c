@@ -1,11 +1,13 @@
+#include <stdlib.h>
+#include <stdio.h>
+#include <stdbool.h>
+#include <time.h>
+#include <pthread.h>
+#include <sys/time.h> // For gettimeofday on Unix-like systems
+
 #include "verlet_interface.h"
 #include "circle_verlet.h"
 #include "error_handler.h"
-#include <time.h>
-#include <stdio.h>
-#include <pthread.h>
-
-#include <stdlib.h>
 #include "misc.h"
 #include "circle_verlet.h"
 #include "grid.h"
@@ -236,18 +238,182 @@ void seq_col(verlet_sim_t *sim){
     
 }
 
+
+struct args_collide {
+    verlet_sim_t *sim;
+    bool *collisions;
+    uint circle_begin;
+    uint circle_end;
+};
+
+
+void *circle_collide(void * thread_data){
+    struct args_collide *arg_c = (struct args_collide*) thread_data;
+    verlet_sim_t *sim = arg_c->sim;
+    bool *collisions = arg_c->collisions;
+    if (arg_c->circle_end >= sim->circle_count) arg_c->circle_end = sim->circle_count - 1;
+
+    // printf("Thread starting collision between %u and %u\n",arg_c->circle_begin, arg_c->circle_end );
+    for (size_t i = arg_c->circle_begin; i <= arg_c->circle_end; i++)
+    {
+        for (size_t j = 0; j < sim->circle_count; j++)
+        {
+            if (i == j){
+                collisions[(i*sim->circle_count) + j] = false;    
+                continue;
+            }
+            vector axis_collision = {
+                .x = sim->circles[i].position_current.x - sim->circles[j].position_current.x,
+                .y = sim->circles[i].position_current.y - sim->circles[j].position_current.y
+            };
+            
+            //if circles are on the exact same position, prevents division by 0 and nan result. 
+            if(axis_collision.x == 0.0 && axis_collision.y == 0.0) axis_collision.x = 0.01;
+
+            float dist = vector_length(axis_collision);
+            int radius_sum = sim->circles[i].radius + sim->circles[j].radius;
+
+            collisions[(i*sim->circle_count) + j] = dist < (float)radius_sum;
+        }
+    }
+    return NULL;
+}
+
+void thread_col(verlet_sim_t *sim){
+    bool collisions[sim->circle_count*sim->circle_count];
+
+    struct timeval start_time, end_time;
+    double time_spent;
+
+    // Measure the start time
+    gettimeofday(&start_time, NULL);
+
+    //get collisions multihreaded
+    uint thread_count = sim->thread_count; 
+
+    pthread_t threads[thread_count];
+    struct args_collide *args_to_free[thread_count];
+
+    int ret;
+    for (size_t i = 0; i < thread_count; i++)
+    {
+        struct args_collide *args = malloc(sizeof(struct args_collide));
+        args->sim = sim;
+        int ratio = sim->circle_count/thread_count;
+        if(sim->circle_count%thread_count != 0) ratio++;
+
+        args->circle_begin = i * (ratio);
+        args->circle_end = ((i+1)*(ratio)) - 1;
+        args->collisions = collisions;
+        // printf("sending thread %zu with section %u to %u\n", i, args.col_begin, args.col_end);
+        ret = pthread_create(threads+i, NULL, circle_collide, (void *) args);   
+        if(ret) {
+            fprintf(stderr, "Thread creation error %d\n",ret);
+        }
+        args_to_free[i] = args;
+    }
+
+
+    for (size_t i = 0; i < thread_count; i++)
+    {
+        pthread_join(threads[i], NULL);
+    }
+
+    for (size_t i = 0; i < thread_count; i++)
+    {
+        free(args_to_free[i]);
+    }
+
+    // Measure the end time after completing the multithreaded collision detection
+    gettimeofday(&end_time, NULL);
+    time_spent = (end_time.tv_sec - start_time.tv_sec) + (end_time.tv_usec - start_time.tv_usec) / 1e3;
+    printf("\tTime spent in multithreaded collision detection: %f microseconds\n", time_spent);
+
+
+
+    //solve collisions 
+    // Measure the start time
+    gettimeofday(&start_time, NULL);
+
+    for (size_t i = 0; i < sim->circle_count; i++)
+    {
+        for (size_t j = 0; j < sim->circle_count; j++)
+        {
+            if (i == j) continue;
+            if (!collisions[(i*sim->circle_count) + j]) continue;
+            // printf("collide betwewen %zu and %zu\n", i,j);
+
+            vector axis_collision = {
+                .x = sim->circles[i].position_current.x - sim->circles[j].position_current.x,
+                .y = sim->circles[i].position_current.y - sim->circles[j].position_current.y
+            };
+            
+            //if circles are on the exact same position, prevents division by 0 and nan result. 
+            if(axis_collision.x == 0.0 && axis_collision.y == 0.0) axis_collision.x = 0.01;
+
+            float dist = vector_length(axis_collision);
+            int radius_sum = sim->circles[i].radius + sim->circles[j].radius;
+
+            vector n = {
+                .x = axis_collision.x / dist,
+                .y = axis_collision.y / dist
+            };
+            float delta = radius_sum - dist;
+
+            sim->circles[i].position_current.x += 0.5 * delta * n.x;
+            sim->circles[i].position_current.y += 0.5 * delta * n.y;
+
+            sim->circles[j].position_current.x -= 0.5 * delta * n.x;
+            sim->circles[j].position_current.y -= 0.5 * delta * n.y;
+        }
+    }
+
+    // Measure the end time after completing the collision resolution
+    gettimeofday(&end_time, NULL);
+    time_spent = (end_time.tv_sec - start_time.tv_sec) + (end_time.tv_usec - start_time.tv_usec) / 1e3;
+    printf("\tTime spent in collision resolution: %f microseconds\n", time_spent);
+
+}
+
 void update_simulation(verlet_sim_t *sim, float dt){
 
     uint sub_steps = sim->sub_steps;
     float sub_dt = dt/(float)sub_steps;
+    struct timeval start_time, end_time;
+    double time_spent;  
+
     for (size_t i = 0; i < sub_steps; i++)
     {
+
+        gettimeofday(&start_time, NULL);    
         apply_gravity(sim);
+        gettimeofday(&end_time, NULL); 
+        time_spent = (end_time.tv_sec - start_time.tv_sec) + (end_time.tv_usec - start_time.tv_usec) / 1e3;
+        printf("Time spent in apply gravity: %f microseconds\n", time_spent);
+
+
+        gettimeofday(&start_time, NULL);    
         apply_constraint(sim);
+        gettimeofday(&end_time, NULL);
+        time_spent = (end_time.tv_sec - start_time.tv_sec) + (end_time.tv_usec - start_time.tv_usec) / 1e3;
+        printf("Time spent in apply constraint: %f microseconds\n", time_spent);
+     
+        
+     
+        gettimeofday(&start_time, NULL);
+        // thread_col(sim);
         update_grid(sim);
         solve_threaded_collision(sim);
         // seq_col(sim);
+        gettimeofday(&end_time, NULL);
+        time_spent = (end_time.tv_sec - start_time.tv_sec) + (end_time.tv_usec - start_time.tv_usec) / 1e3;
+        printf("Time spent in collisions: %f microseconds\n", time_spent);
+     
+        gettimeofday(&start_time, NULL);    
         update_positions(sim, sub_dt);
+        gettimeofday(&end_time, NULL);
+        time_spent = (end_time.tv_sec - start_time.tv_sec) + (end_time.tv_usec - start_time.tv_usec) / 1e3;
+        printf("Time spent in update positions: %f microseconds\n", time_spent);  
     }
     sim->total_frames++;
 }
