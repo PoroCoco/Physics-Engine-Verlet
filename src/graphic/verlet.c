@@ -13,7 +13,7 @@
 #include "cimgui_impl.h"
 #include <GL/gl.h>
 
-void spawn_random_circles(verlet_sim_t *sim, int count, int height, int width){
+void spawn_random_circles(verlet_sim_t *sim, size_t count, int height, int width){
     for (size_t i = 0; i < count; i++)
         add_circle(sim, CIRCLE_RADIUS, rand()%width, rand()%height, rainbow_color(sim_get_object_count(sim)), 0, 0);
 }
@@ -66,11 +66,6 @@ int main(int argc, char* argv[]) {
     SDL_Event event;
     bool program_launched = true;
     bool button_mousedown = false;
-    ImVec4 clearColor;
-    clearColor.x = 0.45f;
-    clearColor.y = 0.55f;
-    clearColor.z = 0.60f;
-    clearColor.w = 1.00f;
     while(program_launched)
     {
         unsigned int start_time = SDL_GetPerformanceCounter();
@@ -79,7 +74,6 @@ int main(int argc, char* argv[]) {
 
         static float gui_constraint_radius = 1.0f;
         static int gui_gravity = 1000;
-        static int counter = 0;
         static int gui_sub_steps = 5;
         static int gui_thread_count = 8;
 
@@ -181,12 +175,9 @@ int main(int argc, char* argv[]) {
         igText("Number of objects : %zu", sim_get_object_count(sim));
         igEnd();
 
-        unsigned int start_time_simulation = SDL_GetPerformanceCounter();
+        // unsigned int start_time_simulation = SDL_GetPerformanceCounter();
         update_simulation(sim, 1/60.0);
-        unsigned int end_time_simulation = SDL_GetPerformanceCounter();
-
-        // render_simulation(gui, sim);
-        // render_gui(gui);
+        // unsigned int end_time_simulation = SDL_GetPerformanceCounter();
 
         // Rendering
         glMatrixMode(GL_PROJECTION);
@@ -215,7 +206,7 @@ int main(int argc, char* argv[]) {
         unsigned int end_time = SDL_GetPerformanceCounter();
         float freq_time = SDL_GetPerformanceFrequency();
         float elapsedMS = (end_time - start_time) / freq_time*1000.0;
-        float elapsedMS_simulation = (end_time_simulation - start_time_simulation) / freq_time*1000.0;
+        // float elapsedMS_simulation = (end_time_simulation - start_time_simulation) / freq_time*1000.0;
         float fps_delay = floor(16.666 - elapsedMS);
         if(fps_delay>0){
             // printf("freeze for %f\n", fps_delay);
