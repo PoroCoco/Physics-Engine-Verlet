@@ -20,6 +20,8 @@ typedef struct verlet_sim {
     uint constraint_radius;
 
     uint total_frames;
+    uint sub_steps;
+    uint thread_count;
     enum constraint_shape constraint_shape;
 
     uint width;
@@ -49,6 +51,8 @@ verlet_sim_t *init_simulation(enum constraint_shape shape, float constraint_cent
 
     vector gravity = {.x = 0, .y = 1000};
     s->gravity = gravity;
+    s->sub_steps = SUB_STEPS;
+    s->thread_count = THREAD_COUNT;
     return s;
 }
 
@@ -188,16 +192,18 @@ void update_grid(verlet_sim_t *sim){
 }
 
 void solve_threaded_collision(verlet_sim_t *sim){
-    pthread_t threads[THREAD_COUNT];
-    struct arguments_collision *args_to_free[THREAD_COUNT];
+    uint thread_count = sim->thread_count; 
+
+    pthread_t threads[thread_count];
+    struct arguments_collision *args_to_free[thread_count];
 
     int ret;
-    for (size_t i = 0; i < THREAD_COUNT; i++)
+    for (size_t i = 0; i < thread_count; i++)
     {
         struct arguments_collision *args = malloc(sizeof(struct arguments_collision));
         args->sim = sim;
-        args->col_begin = i * (sim->grid->width/THREAD_COUNT);
-        args->col_end = ((i+1)*(sim->grid->width/THREAD_COUNT));
+        args->col_begin = i * (sim->grid->width/thread_count);
+        args->col_end = ((i+1)*(sim->grid->width/thread_count));
         // printf("sending thread %zu with section %u to %u\n", i, args.col_begin, args.col_end);
         ret = pthread_create(threads+i, NULL, solve_cell_collisions, (void *) args);   
         if(ret) {
@@ -206,12 +212,12 @@ void solve_threaded_collision(verlet_sim_t *sim){
         args_to_free[i] = args;
     }
 
-    for (size_t i = 0; i < THREAD_COUNT; i++)
+    for (size_t i = 0; i < thread_count; i++)
     {
         pthread_join(threads[i], NULL);
     }
 
-    for (size_t i = 0; i < THREAD_COUNT; i++)
+    for (size_t i = 0; i < thread_count; i++)
     {
         free(args_to_free[i]);
     }
@@ -232,8 +238,9 @@ void seq_col(verlet_sim_t *sim){
 
 void update_simulation(verlet_sim_t *sim, float dt){
 
-    float sub_dt = dt/(float)SUB_STEPS;
-    for (size_t i = 0; i < SUB_STEPS; i++)
+    uint sub_steps = sim->sub_steps;
+    float sub_dt = dt/(float)sub_steps;
+    for (size_t i = 0; i < sub_steps; i++)
     {
         apply_gravity(sim);
         apply_constraint(sim);
@@ -321,4 +328,16 @@ vector sim_get_gravity(verlet_sim_t *sim){
 
 void sim_set_gravity(verlet_sim_t *sim, vector gravity){
     sim->gravity = gravity;
+}
+
+void sim_set_constraint_radius(verlet_sim_t *sim, int radius){
+    sim->constraint_radius = radius;
+}
+
+void sim_set_sub_steps(verlet_sim_t *sim, uint sub_steps){
+    sim->sub_steps = sub_steps;
+}
+
+void sim_set_thread_count(verlet_sim_t *sim, uint thread_count){
+    sim->thread_count = thread_count;
 }

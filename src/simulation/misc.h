@@ -1,8 +1,8 @@
 #ifndef _MISC_H__
 #define _MISC_H__
 
-#define SUB_STEPS 10
-#define THREAD_COUNT 16
+#define SUB_STEPS 5
+#define THREAD_COUNT 8
 
 typedef unsigned int uint;
 

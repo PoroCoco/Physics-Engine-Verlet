@@ -29,6 +29,12 @@ unsigned int sim_get_constraint_y(verlet_sim_t *sim);
 
 unsigned int sim_get_constraint_radius(verlet_sim_t *sim);
 
+void sim_set_constraint_radius(verlet_sim_t *sim, int radius);
+
+void sim_set_sub_steps(verlet_sim_t *sim, unsigned int sub_steps);
+
+void sim_set_thread_count(verlet_sim_t *sim, unsigned int thread_count);
+
 unsigned int sim_get_grid_height(verlet_sim_t *sim);
 
 unsigned int sim_get_grid_width(verlet_sim_t *sim);
