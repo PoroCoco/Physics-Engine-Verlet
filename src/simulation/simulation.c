@@ -280,7 +280,7 @@ void *circle_collide(void * thread_data){
 }
 
 void thread_col(verlet_sim_t *sim){
-    bool collisions[sim->circle_count*sim->circle_count];
+    bool *collisions = malloc(sizeof(*collisions)*  sim->circle_count * sim->circle_count);
 
     struct timeval start_time, end_time;
     double time_spent;
@@ -368,6 +368,7 @@ void thread_col(verlet_sim_t *sim){
         }
     }
 
+    free(collisions);
     // Measure the end time after completing the collision resolution
     gettimeofday(&end_time, NULL);
     time_spent = (end_time.tv_sec - start_time.tv_sec) + (end_time.tv_usec - start_time.tv_usec) / 1e3;
@@ -401,9 +402,9 @@ void update_simulation(verlet_sim_t *sim, float dt){
         
      
         gettimeofday(&start_time, NULL);
-        // thread_col(sim);
-        update_grid(sim);
-        solve_threaded_collision(sim);
+        thread_col(sim);
+        // update_grid(sim);
+        // solve_threaded_collision(sim);
         // seq_col(sim);
         gettimeofday(&end_time, NULL);
         time_spent = (end_time.tv_sec - start_time.tv_sec) + (end_time.tv_usec - start_time.tv_usec) / 1e3;
