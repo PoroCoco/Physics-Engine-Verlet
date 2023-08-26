@@ -74,13 +74,17 @@ add_executable(verlet_circle src/simulation/circle_verlet.c src/graphic/verlet.c
 target_compile_definitions(verlet_circle PUBLIC -DCIMGUI_USE_OPENGL3 -DCIMGUI_USE_SDL2)
 
 
-add_library(verlet src/simulation/error_handler.c src/simulation/circle_verlet.c src/simulation/simulation.c src/simulation/color.c src/simulation/grid.c src/simulation/save.c)
+add_library(verlet src/simulation/error_handler.c src/simulation/circle_verlet.c src/simulation/simulation.c src/simulation/color.c src/simulation/grid.c src/simulation/save.c src/simulation/sticks.c)
 
 target_link_libraries(verlet m pthread)
 target_link_libraries(verlet_circle ${SDL2_ALL_LIBS} m verlet ${IMGUI_SDL_LIBRARY} cimgui_sdl)
 
 
 ############################ TESTS TMP ############################
+
+add_executable(sim_test test/sim_test.c)
+target_link_libraries(sim_test verlet)
+
 
 add_executable(verlet_test test/test.c)
 target_link_libraries(verlet_test verlet)

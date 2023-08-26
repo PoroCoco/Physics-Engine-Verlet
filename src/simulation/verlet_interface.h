@@ -3,6 +3,7 @@
 
 #include <stdlib.h>
 #include "circle_verlet.h"
+#include "sticks.h"
 
 enum constraint_shape {
     CIRCLE,
@@ -47,10 +48,18 @@ vector sim_get_gravity(verlet_sim_t *sim);
 
 void sim_set_gravity(verlet_sim_t *sim, vector gravity);
 
+size_t sim_get_stick_count(verlet_sim_t *sim);
+
 verlet_circle *sim_get_nth_circle(verlet_sim_t *sim, unsigned int n);
 
+stick * add_stick(verlet_sim_t *sim, verlet_circle *p0, verlet_circle *p1, float len);
 
-void add_circle(verlet_sim_t *sim, unsigned int radius, float px, float py, color_t color, float acc_x, float acc_y);
+stick * sim_get_nth_stick(verlet_sim_t *sim, unsigned int n);
+
+verlet_circle * sim_get_circle_at_coord(verlet_sim_t *sim, float x, float y);
+
+
+verlet_circle * add_circle(verlet_sim_t *sim, unsigned int radius, float px, float py, color_t color, float acc_x, float acc_y, bool pinned);
 
 void destroy_simulation(verlet_sim_t *s);
 

@@ -15,21 +15,61 @@
 
 void spawn_random_circles(verlet_sim_t *sim, size_t count, int height, int width){
     for (size_t i = 0; i < count; i++)
-        add_circle(sim, CIRCLE_RADIUS, rand()%width, rand()%height, rainbow_color(sim_get_object_count(sim)), 0, 0);
+        add_circle(sim, CIRCLE_RADIUS, rand()%width, rand()%height, rainbow_color(sim_get_object_count(sim)), 0, 0, false);
 }
 
+void spawn_random_sticks(verlet_sim_t *sim, size_t count, int height, int width, size_t knots){
+    for (size_t i = 0; i < count; i++){
+        verlet_circle *p0 = add_circle(sim, CIRCLE_RADIUS, rand()%width, rand()%height, rainbow_color(sim_get_object_count(sim)), 0, 0, true);
+        for (size_t j = 0; j < knots; j++){
+            verlet_circle *p1 = add_circle(sim, CIRCLE_RADIUS, rand()%width, rand()%height, rainbow_color(sim_get_object_count(sim)), 0, 0, false);
+            add_stick(sim, p0, p1, 100.0);
+            p0 = p1;
+        }
+        
+    }
+}
+
+void spawn_cloth(verlet_sim_t *sim, float spread, int cols, int rows){
+    float start_x = 600.0;
+    float start_y = 200.0;
+    for (size_t i = 0; i < rows; i++){
+        for (size_t j = 0; j < cols; j++){
+            add_circle(sim, CIRCLE_RADIUS, start_x + j*spread, start_y + i*spread, rainbow_color(sim_get_object_count(sim)), 0, 0, i==0 && (j%2 == 0));
+        }
+    }
+
+    for (int i = 0; i < rows; i++){
+        for (int j = 0; j < cols; j++){
+            int c_index = i*cols + j;
+            verlet_circle *c = sim_get_nth_circle(sim, c_index);
+            if (j + 1 < cols) add_stick(sim, c, sim_get_nth_circle(sim, c_index + 1), spread);
+            if (i + 1 < rows) add_stick(sim, c, sim_get_nth_circle(sim, c_index + cols), spread);
+        }
+    }
+    
+
+    return;
+}
+
+verlet_sim_t * new_simulation(void){
+    verlet_sim_t *sim = init_simulation(SQUARE, 1920/2, 1080/2, 1080/2, WINDOW_WIDTH, WINDOW_HEIGHT, GRID_WIDTH, GRID_HEIGHT);
+
+    // spawn_random_sticks(sim, 1, WINDOW_HEIGHT, WINDOW_WIDTH, 50);
+    // spawn_random_circles(sim, 1, WINDOW_HEIGHT, WINDOW_WIDTH);
+    // spawn_cloth(sim, 20, 25, 36);
+
+    assert(sim);
+
+    return sim;
+}
 
 int main(int argc, char* argv[]) {
 
     struct gui *gui = init_gui();
-    verlet_sim_t *sim = init_simulation(SQUARE, 1920/2, 1080/2, 1080/2, WINDOW_WIDTH, WINDOW_HEIGHT, GRID_WIDTH, GRID_HEIGHT);
+    verlet_sim_t *sim = new_simulation();
 
-    spawn_random_circles(sim, 800, WINDOW_HEIGHT, WINDOW_WIDTH);
-    
-
-    assert(sim);
-
-        // GL 3.0 + GLSL 130
+    // GL 3.0 + GLSL 130
     const char* glsl_version = "#version 130";
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
@@ -65,7 +105,9 @@ int main(int argc, char* argv[]) {
 
     SDL_Event event;
     bool program_launched = true;
-    bool button_mousedown = false;
+    bool button_mousedown_left = false;
+    bool button_mousedown_right = false;
+    verlet_circle *selected_circle = NULL;
     while(program_launched)
     {
         unsigned int start_time = SDL_GetPerformanceCounter();
@@ -76,6 +118,7 @@ int main(int argc, char* argv[]) {
         static int gui_gravity = 1000;
         static int gui_sub_steps = 5;
         static int gui_thread_count = 8;
+        static int gui_circle_radius = CIRCLE_RADIUS;
 
         while(SDL_PollEvent(&event))
         {
@@ -85,14 +128,25 @@ int main(int argc, char* argv[]) {
             {
 
                 case SDL_MOUSEBUTTONDOWN:
-                    button_mousedown = true;
-                    int x,y;
-                    SDL_GetMouseState( &x, &y );
-                    // add_circle(sim, 4+(rand()%(CIRCLE_RADIUS-4)), x, y, rainbow_color(sim->circle_count), 0, 0);
+                    if (event.button.button == SDL_BUTTON_LEFT) {
+                        button_mousedown_left = true;
+                        int x,y;
+                        SDL_GetMouseState( &x, &y );
+                        // add_circle(sim, 4+(rand()%(CIRCLE_RADIUS-4)), x, y, rainbow_color(sim->circle_count), 0, 0);
+                    }else if (event.button.button == SDL_BUTTON_RIGHT){
+                        button_mousedown_right = true;
+                        int x,y;
+                        SDL_GetMouseState( &x, &y );
+                        selected_circle = sim_get_circle_at_coord(sim, x*1.0, y*1.0);
+                    }
                     break;
 
                 case SDL_MOUSEBUTTONUP:
-                    button_mousedown = false;
+                    if (event.button.button == SDL_BUTTON_LEFT) {
+                        button_mousedown_left = false;
+                    }else if (event.button.button == SDL_BUTTON_RIGHT){
+                        button_mousedown_right = false;
+                    }
                     break;
 
                 case SDL_KEYDOWN:
@@ -113,6 +167,14 @@ int main(int argc, char* argv[]) {
                         gui_gravity *= -1;
                         sim_set_gravity(sim, gravity);
                         continue;
+                    case SDLK_p:
+                        int x,y;
+                        SDL_GetMouseState( &x, &y );
+                        verlet_circle *c = sim_get_circle_at_coord(sim, x*1.0, y*1.0);
+                        if (c){
+                            c->pinned = !c->pinned;
+                        };
+                        continue;
                     
                     case SDLK_ESCAPE:
                         printf("Esc pressed, closing simulation\n");
@@ -132,12 +194,23 @@ int main(int argc, char* argv[]) {
                     break;
             }
         }
-        if(button_mousedown){
+        if(button_mousedown_left){
             int x,y;
             SDL_GetMouseState( &x, &y );
-            add_circle(sim, CIRCLE_RADIUS, x, y, rainbow_color(sim_get_object_count(sim)), 0, 0);
+            add_circle(sim, gui_circle_radius, x, y, rainbow_color(sim_get_object_count(sim)), 0, 0, false);
             // add_circle(sim, 4+(rand()%(CIRCLE_RADIUS-4)), x, y, rainbow_color(sim_get_object_count(sim)), 0, 0);
         }
+        if(button_mousedown_right){
+            int x,y;
+            SDL_GetMouseState( &x, &y );
+            if (selected_circle != NULL){
+                selected_circle->position_current.x = x;
+                selected_circle->position_old.x = x;
+                selected_circle->position_current.y = y;
+                selected_circle->position_old.y = y;
+            }
+        }
+
         // if (sim_get_object_count(sim) < 0) add_circle(sim, CIRCLE_RADIUS, CONSTRAINT_CENTER_X+300, CONSTRAINT_CENTER_Y+300, rainbow_color(sim_get_object_count(sim)), 0, 0);
         // if (sim_get_object_count(sim) < 0) add_circle(sim, CIRCLE_RADIUS, CONSTRAINT_CENTER_X-150, CONSTRAINT_CENTER_Y-150, rainbow_color(sim_get_object_count(sim)), 0, 0);
         // if (sim_get_object_count(sim) < 0) add_circle(sim, CIRCLE_RADIUS, CONSTRAINT_CENTER_X-150, CONSTRAINT_CENTER_Y+150, rainbow_color(sim_get_object_count(sim)), 0, 0);
@@ -164,20 +237,34 @@ int main(int argc, char* argv[]) {
         if(igSliderInt("Thread Count", &gui_thread_count, 0, 32, "%d", 0)){
             sim_set_thread_count(sim, gui_thread_count);  
         }
-        // ImVec2 buttonSize;
-        // buttonSize.x = 0;
-        // buttonSize.y = 0;
-        // if (igButton("Button", buttonSize)) counter++;
+        igSliderInt("Circle Radius", &gui_circle_radius, 1, 30, "%d", 0);
+
+        ImVec2 buttonSize = {.x = 0, .y = 0};
+        if (igButton("Reset", buttonSize)){
+            destroy_simulation(sim);
+            sim = new_simulation();
+        }
         // igSameLine(0.0f, -1.0f);
         // igText("counter = %d", counter);
 
         igText("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / igGetIO()->Framerate, igGetIO()->Framerate);
-        igText("Number of objects : %zu", sim_get_object_count(sim));
+        igText("Number of objects : %zu", sim_get_object_count(sim) + sim_get_stick_count(sim));
         igEnd();
 
         // unsigned int start_time_simulation = SDL_GetPerformanceCounter();
         update_simulation(sim, 1/60.0);
         // unsigned int end_time_simulation = SDL_GetPerformanceCounter();
+
+       if(button_mousedown_right){
+            int x,y;
+            SDL_GetMouseState( &x, &y );
+            verlet_circle *c = sim_get_circle_at_coord(sim, x*1.0, y*1.0);
+            if (c){
+                c->position_current.x = x;
+                c->position_current.y = y;
+            }
+            
+        }
 
         // Rendering
         glMatrixMode(GL_PROJECTION);
@@ -215,7 +302,7 @@ int main(int argc, char* argv[]) {
             // printf("%zu objects in simulation\n", sim->circle_count);
             // program_launched = false;
         }
-
+    
     }
 
     // clean up

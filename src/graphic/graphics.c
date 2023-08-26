@@ -58,7 +58,18 @@ void render_gui(struct gui *gui){
     SDL_RenderPresent(gui->renderer);
 }
 
+float convert_circle_x(verlet_circle *c, uint sim_size){
+    return (2.0 * c->position_current.x  / sim_size) - 1.0 - 0.776;
+}
 
+float convert_circle_y(verlet_circle *c, uint sim_size){
+    // Invert the sign as opengl 1 is the top and -1 the bottom of the window
+    return ((2.0 * c->position_current.y  / sim_size) - 1.0) * -1;
+}
+
+float convert_circle_radius(verlet_circle *c, uint sim_size){
+    return (2.0 * c->radius / sim_size);
+}
 
 void draw_circle(float cx, float cy, float r, int num_segments) {
     glBegin(GL_TRIANGLE_FAN);
@@ -84,6 +95,13 @@ void draw_squares(float top_left_x, float top_left_y, float bottom_right_x, floa
     glEnd();
 }
 
+void draw_line(float x1, float y1, float x2, float y2) {
+    glBegin(GL_LINES);
+    glVertex2f(x1, y1);
+    glVertex2f(x2, y2);
+    glEnd();
+}
+
 void sim_render(verlet_sim_t *sim){
     uint sim_size = sim_get_height(sim);
 
@@ -102,24 +120,24 @@ void sim_render(verlet_sim_t *sim){
     for (size_t i = 0; i < sim_get_object_count(sim); i++)
     {
         verlet_circle *c = sim_get_nth_circle(sim, i);
-        double converted_x = (2.0 * c->position_current.x  / sim_size) - 1.0;
-        converted_x -= 0.776;
+        double converted_x = convert_circle_x(c, sim_size);
         if (converted_x > 1. || converted_x < -1.) continue;
-        double converted_y = (2.0 * c->position_current.y  / sim_size) - 1.0;
-        // Invert the sign as opengl 1 is the top and -1 the bottom of the window
-        converted_y *= -1;
+        double converted_y = convert_circle_y(c, sim_size);
         if (converted_y > 1. || converted_y < -1.) continue;
 
-        double converted_radius = (2.0 * c->radius / sim_size);
+        double converted_radius = convert_circle_radius(c, sim_size);
         // printf("%zu : %lf, %lf -> %lf, %lf\n", i, c->position_current.x, c->position_current.y, converted_x, converted_y);
         // printf("%d,%d,%d\n", c->color.r, c->color.g, c->color.b);
 		glColor3ub(c->color.r, c->color.g, c->color.b);
         draw_circle(converted_x, converted_y, converted_radius, 30);
-
-
-        
-
     }
 
+    glColor3ub(0, 0, 0);
+    for (size_t i = 0; i < sim_get_stick_count(sim); i++)
+    {
+        stick *s = sim_get_nth_stick(sim, i);
+        draw_line(convert_circle_x(s->p0, sim_size), convert_circle_y(s->p0, sim_size),
+                    convert_circle_x(s->p1, sim_size), convert_circle_y(s->p1, sim_size));
+    }
 
 }

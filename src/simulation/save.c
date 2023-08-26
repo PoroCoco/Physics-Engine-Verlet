@@ -49,7 +49,7 @@ verlet_sim_t * sim_load_file(char * file_path){
             fprintf(stderr, "Couldn't match the circles pattern inside the file \"%s\" to load the simulation\n", file_path);
             exit(1);
         }
-        add_circle(s, circle_radius, circle_x, circle_y, rainbow_color(1.0), circle_acc_x, circle_acc_y);
+        add_circle(s, circle_radius, circle_x, circle_y, rainbow_color(1.0), circle_acc_x, circle_acc_y, false);
     }
     
 

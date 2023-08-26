@@ -1,6 +1,8 @@
 #ifndef _CIRCLE_VERLET_H__
 #define _CIRCLE_VERLET_H__
 
+#include <stdbool.h>
+
 typedef struct color {
     unsigned char r;
     unsigned char g;
@@ -19,6 +21,7 @@ typedef struct verlet_circle {
     
     color_t color;
     unsigned int radius;
+    bool pinned;
 } verlet_circle;
 
 void update_position_circle(verlet_circle *c, float dt);

@@ -11,11 +11,16 @@
 #include "misc.h"
 #include "circle_verlet.h"
 #include "grid.h"
+#include "sticks.h"
 
 typedef struct verlet_sim {
     size_t circle_count;
     size_t allocated_circles;
-    verlet_circle *circles;
+    verlet_circle circles[100000];
+
+    size_t stick_count;
+    size_t allocated_sticks;
+    stick sticks[100000];
 
     struct grid *grid;
     vector constraint_center;
@@ -37,10 +42,17 @@ typedef struct verlet_sim {
 verlet_sim_t *init_simulation(enum constraint_shape shape, float constraint_center_x, float constraint_center_y, unsigned int constraint_radius, unsigned int width, unsigned int height, unsigned int grid_width, unsigned int grid_height){
     verlet_sim_t *s = malloc(sizeof(verlet_sim_t));
     _check_malloc(s, __LINE__, __FILE__);
+    
     s->circle_count = 0;
-    s->circles = malloc(sizeof(verlet_circle));
-    _check_malloc(s->circles, __LINE__, __FILE__);
-    s->allocated_circles = 1;
+    // s->circles = malloc(sizeof(verlet_circle));
+    // _check_malloc(s->circles, __LINE__, __FILE__);
+    s->allocated_circles = 1000;
+
+    s->stick_count = 0;
+    // s->sticks = malloc(sizeof(stick));
+    // _check_malloc(s->sticks, __LINE__, __FILE__);
+    s->allocated_sticks = 1000;
+
     s->total_frames = 0;
 
     s->constraint_shape = shape;
@@ -60,7 +72,8 @@ verlet_sim_t *init_simulation(enum constraint_shape shape, float constraint_cent
 
 void destroy_simulation(verlet_sim_t *s){
     if (!s) return;
-    if (s->circles) free(s->circles);
+    // if (s->circles) free(s->circles);
+    // if (s->sticks) free(s->sticks);
     if (s->grid) destroy_grid(s->grid);
     free(s);
 }
@@ -75,7 +88,7 @@ void apply_gravity(verlet_sim_t *sim){
 void update_positions(verlet_sim_t *sim, float dt){
     for (size_t i = 0; i < sim->circle_count; i++)
     {
-        update_position_circle(sim->circles + i, dt);
+        if (!sim->circles[i].pinned) update_position_circle(sim->circles + i, dt);
     }
 }
 
@@ -129,11 +142,20 @@ void solve_circle_collision(verlet_circle *c1, verlet_circle *c2){
             .y = axis_collision.y / dist
         };
         float delta = radius_sum - dist;
-        c1->position_current.x += 0.5 * delta * n.x;
-        c1->position_current.y += 0.5 * delta * n.y;
+        
+        if (!c1->pinned && !c2->pinned){
+            c1->position_current.x += 0.5 * delta * n.x;
+            c1->position_current.y += 0.5 * delta * n.y;
 
-        c2->position_current.x -= 0.5 * delta * n.x;
-        c2->position_current.y -= 0.5 * delta * n.y;
+            c2->position_current.x -= 0.5 * delta * n.x;
+            c2->position_current.y -= 0.5 * delta * n.y;
+        }else if (c1->pinned && !c2->pinned){
+            c2->position_current.x -= 1.0 * delta * n.x;
+            c2->position_current.y -= 1.0 * delta * n.y;
+        }else{
+            c1->position_current.x -= 1.0 * delta * n.x;
+            c1->position_current.y -= 1.0 * delta * n.y;
+        }
     }
 }
 
@@ -376,6 +398,15 @@ void thread_col(verlet_sim_t *sim){
 
 }
 
+void update_sticks(verlet_sim_t *sim, float sub_dt){
+    // printf("updating %zu sitcks\n",sim->stick_count );
+    for (size_t i = 0; i < sim->stick_count; i++)
+    {
+        stick_update(&sim->sticks[i]);
+    }
+}
+
+
 void update_simulation(verlet_sim_t *sim, float dt){
 
     uint sub_steps = sim->sub_steps;
@@ -390,59 +421,81 @@ void update_simulation(verlet_sim_t *sim, float dt){
         apply_gravity(sim);
         gettimeofday(&end_time, NULL); 
         time_spent = (end_time.tv_sec - start_time.tv_sec) + (end_time.tv_usec - start_time.tv_usec) / 1e3;
-        printf("Time spent in apply gravity: %f microseconds\n", time_spent);
-
-
+        // printf("Time spent in apply gravity: %f microseconds\n", time_spent);
+        
         gettimeofday(&start_time, NULL);    
         apply_constraint(sim);
         gettimeofday(&end_time, NULL);
         time_spent = (end_time.tv_sec - start_time.tv_sec) + (end_time.tv_usec - start_time.tv_usec) / 1e3;
-        printf("Time spent in apply constraint: %f microseconds\n", time_spent);
+        // printf("Time spent in apply constraint: %f microseconds\n", time_spent);
      
-        
      
         gettimeofday(&start_time, NULL);
-        thread_col(sim);
+        // thread_col(sim);
         // update_grid(sim);
         // solve_threaded_collision(sim);
-        // seq_col(sim);
+        seq_col(sim);
         gettimeofday(&end_time, NULL);
         time_spent = (end_time.tv_sec - start_time.tv_sec) + (end_time.tv_usec - start_time.tv_usec) / 1e3;
-        printf("Time spent in collisions: %f microseconds\n", time_spent);
+        // printf("Time spent in collisions: %f microseconds\n", time_spent);
      
+
+
         gettimeofday(&start_time, NULL);    
         update_positions(sim, sub_dt);
         gettimeofday(&end_time, NULL);
         time_spent = (end_time.tv_sec - start_time.tv_sec) + (end_time.tv_usec - start_time.tv_usec) / 1e3;
-        printf("Time spent in update positions: %f microseconds\n", time_spent);  
+        // printf("Time spent in update positions: %f microseconds\n", time_spent);
+
+        update_sticks(sim, sub_dt);
     }
     sim->total_frames++;
 }
 
 
-void add_circle(verlet_sim_t *sim, uint radius, float px, float py, color_t color, float acc_x, float acc_y){
-    verlet_circle new_circle = {
-        .radius = radius,
-        .position_old.x = px,
-        .position_old.y = py,
-        .position_current.x = px,
-        .position_current.y = py,
-        .acceleration.x = acc_x,
-        .acceleration.y = acc_y,
-        .color = color
-    };
-    sim->circles[sim->circle_count] = new_circle;
+verlet_circle * add_circle(verlet_sim_t *sim, uint radius, float px, float py, color_t color, float acc_x, float acc_y, bool pinned){
+    verlet_circle *new_circle = &sim->circles[sim->circle_count];
+    new_circle->radius = radius;
+    new_circle->position_old.x = px;
+    new_circle->position_old.y = py;
+    new_circle->position_current.x = px;
+    new_circle->position_current.y = py;
+    new_circle->acceleration.x = acc_x;
+    new_circle->acceleration.y = acc_y;
+    new_circle->color = color;
+    new_circle->pinned = pinned;
 
     sim->circle_count += 1;
 
-    if(sim->circle_count == sim->allocated_circles){
-        sim->circles = realloc(sim->circles, (sizeof(verlet_circle) * sim->allocated_circles * 2));
-        _check_malloc(sim->circles, __LINE__, __FILE__);
+    // if(sim->circle_count == sim->allocated_circles){
+    //     sim->circles = realloc(sim->circles, (sizeof(verlet_circle) * sim->allocated_circles * 2));
+    //     _check_malloc(sim->circles, __LINE__, __FILE__);
 
-        sim->allocated_circles *= 2;
-    }
+    //     sim->allocated_circles *= 2;
+    // }
 
+    // Pointer on the circle 
+    return  &sim->circles[sim->circle_count - 1];
 }
+
+stick * add_stick(verlet_sim_t *sim, verlet_circle *p0, verlet_circle *p1, float len){
+    sim->sticks[sim->stick_count].p0 = p0;
+    sim->sticks[sim->stick_count].p1 = p1;
+    sim->sticks[sim->stick_count].length = len;
+
+    sim->stick_count++;
+
+    // Grow dynamic array if necessary
+    // if(sim->stick_count == sim->allocated_sticks){
+    //     sim->sticks = realloc(sim->sticks, (sizeof(stick) * sim->allocated_sticks * 2));
+    //     _check_malloc(sim->sticks, __LINE__, __FILE__);
+
+    //     sim->allocated_sticks *= 2;
+    // }
+
+    return &sim->sticks[sim->stick_count - 1];
+}
+
 
 size_t sim_get_current_step(verlet_sim_t *sim){
     return sim->total_frames;
@@ -507,4 +560,27 @@ void sim_set_sub_steps(verlet_sim_t *sim, uint sub_steps){
 
 void sim_set_thread_count(verlet_sim_t *sim, uint thread_count){
     sim->thread_count = thread_count;
+}
+
+size_t sim_get_stick_count(verlet_sim_t *sim){
+    return sim->stick_count;
+}
+
+stick * sim_get_nth_stick(verlet_sim_t *sim, unsigned int n){
+    return &sim->sticks[n];
+}
+
+verlet_circle * sim_get_circle_at_coord(verlet_sim_t *sim, float x, float y){
+    verlet_circle *c = NULL;
+    for (size_t i = 0; i < sim->circle_count; i++)
+    {
+        c = &sim->circles[i];
+        if (c->position_current.x - c->radius < x && c->position_current.x + c->radius > x
+                && c->position_current.y - c->radius < y && c->position_current.y + c->radius > y)
+            {
+                return c;
+            }
+    }
+    
+    return NULL;
 }
