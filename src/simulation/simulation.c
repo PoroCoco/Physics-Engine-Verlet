@@ -15,12 +15,10 @@
 
 typedef struct verlet_sim {
     size_t circle_count;
-    size_t allocated_circles;
-    verlet_circle circles[100000];
+    verlet_circle circles[SIM_MAX_CIRCLES];
 
     size_t stick_count;
-    size_t allocated_sticks;
-    stick sticks[100000];
+    stick sticks[SIM_MAX_STICKS];
 
     struct grid *grid;
     vector constraint_center;
@@ -44,15 +42,7 @@ verlet_sim_t *init_simulation(enum constraint_shape shape, float constraint_cent
     _check_malloc(s, __LINE__, __FILE__);
     
     s->circle_count = 0;
-    // s->circles = malloc(sizeof(verlet_circle));
-    // _check_malloc(s->circles, __LINE__, __FILE__);
-    s->allocated_circles = 1000;
-
     s->stick_count = 0;
-    // s->sticks = malloc(sizeof(stick));
-    // _check_malloc(s->sticks, __LINE__, __FILE__);
-    s->allocated_sticks = 1000;
-
     s->total_frames = 0;
 
     s->constraint_shape = shape;
@@ -467,13 +457,6 @@ verlet_circle * add_circle(verlet_sim_t *sim, uint radius, float px, float py, c
 
     sim->circle_count += 1;
 
-    // if(sim->circle_count == sim->allocated_circles){
-    //     sim->circles = realloc(sim->circles, (sizeof(verlet_circle) * sim->allocated_circles * 2));
-    //     _check_malloc(sim->circles, __LINE__, __FILE__);
-
-    //     sim->allocated_circles *= 2;
-    // }
-
     // Pointer on the circle 
     return  &sim->circles[sim->circle_count - 1];
 }
@@ -484,14 +467,6 @@ stick * add_stick(verlet_sim_t *sim, verlet_circle *p0, verlet_circle *p1, float
     sim->sticks[sim->stick_count].length = len;
 
     sim->stick_count++;
-
-    // Grow dynamic array if necessary
-    // if(sim->stick_count == sim->allocated_sticks){
-    //     sim->sticks = realloc(sim->sticks, (sizeof(stick) * sim->allocated_sticks * 2));
-    //     _check_malloc(sim->sticks, __LINE__, __FILE__);
-
-    //     sim->allocated_sticks *= 2;
-    // }
 
     return &sim->sticks[sim->stick_count - 1];
 }
