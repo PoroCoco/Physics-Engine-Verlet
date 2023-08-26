@@ -52,14 +52,32 @@ void spawn_cloth(verlet_sim_t *sim, float spread, int cols, int rows){
     return;
 }
 
-verlet_sim_t * new_simulation(void){
+enum sim_scenario {
+    SCENARIO_EMPTY,
+    SCENARIO_RANDOM,
+    SCENARIO_CLOTH,
+    SCENARIO_PLINKO,
+
+    SCENARIO_COUNT
+};
+
+verlet_sim_t * new_simulation(enum sim_scenario scenario){
     verlet_sim_t *sim = init_simulation(SQUARE, 1920/2, 1080/2, 1080/2, WINDOW_WIDTH, WINDOW_HEIGHT, GRID_WIDTH, GRID_HEIGHT);
-
-    // spawn_random_sticks(sim, 1, WINDOW_HEIGHT, WINDOW_WIDTH, 50);
-    // spawn_random_circles(sim, 1, WINDOW_HEIGHT, WINDOW_WIDTH);
-    // spawn_cloth(sim, 20, 25, 36);
-
     assert(sim);
+
+    switch (scenario)
+    {
+    case SCENARIO_RANDOM:
+        spawn_random_circles(sim, 500, WINDOW_HEIGHT, WINDOW_WIDTH);
+        break;
+    
+    case SCENARIO_CLOTH:
+        spawn_cloth(sim, 20, 25, 36);
+        break;
+
+    default:
+        break;
+    }
 
     return sim;
 }
@@ -67,7 +85,7 @@ verlet_sim_t * new_simulation(void){
 int main(int argc, char* argv[]) {
 
     struct gui *gui = init_gui();
-    verlet_sim_t *sim = new_simulation();
+    verlet_sim_t *sim = new_simulation(SCENARIO_EMPTY);
 
     // GL 3.0 + GLSL 130
     const char* glsl_version = "#version 130";
@@ -240,11 +258,20 @@ int main(int argc, char* argv[]) {
         igSliderInt("Circle Radius", &gui_circle_radius, 1, 30, "%d", 0);
 
         ImVec2 buttonSize = {.x = 0, .y = 0};
-        if (igButton("Reset", buttonSize)){
+        if (igButton("Empty", buttonSize)){
             destroy_simulation(sim);
-            sim = new_simulation();
+            sim = new_simulation(SCENARIO_EMPTY);
         }
-        // igSameLine(0.0f, -1.0f);
+        igSameLine(0.0f, -1.0f);
+        if (igButton("Cloth", buttonSize)){
+            destroy_simulation(sim);
+            sim = new_simulation(SCENARIO_CLOTH);
+        }
+        igSameLine(0.0f, -2.0f);
+        if (igButton("Random", buttonSize)){
+            destroy_simulation(sim);
+            sim = new_simulation(SCENARIO_RANDOM);
+        }
         // igText("counter = %d", counter);
 
         igText("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / igGetIO()->Framerate, igGetIO()->Framerate);
