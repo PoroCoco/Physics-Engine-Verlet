@@ -404,11 +404,15 @@ void thread_col(verlet_sim_t *sim){
 
 }
 
-void update_sticks(verlet_sim_t *sim, float sub_dt){
+void update_sticks(verlet_sim_t *sim, float sub_dt, bool right_to_left){
     // printf("updating %zu sitcks\n",sim->stick_count );
-    for (size_t i = 0; i < sim->stick_count; i++)
-    {
-        stick_update(&sim->sticks[i]);
+    if (right_to_left){
+        for (size_t i = 0; i < sim->stick_count; i++)
+            stick_update(&sim->sticks[i]);
+    }else{
+        for (size_t i = sim->stick_count; i > 0 ; i--)
+            stick_update(&sim->sticks[i-1]);
+
     }
 }
 
@@ -456,7 +460,7 @@ void update_simulation(verlet_sim_t *sim, float dt){
         time_spent = (end_time.tv_sec - start_time.tv_sec) + (end_time.tv_usec - start_time.tv_usec) / 1e3;
         // printf("Time spent in update positions: %f microseconds\n", time_spent);
 
-        update_sticks(sim, sub_dt);
+        update_sticks(sim, sub_dt, ((i%2)==0));
     }
     sim->total_frames++;
     gettimeofday(&total_end_time, NULL);    
