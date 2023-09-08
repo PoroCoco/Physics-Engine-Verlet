@@ -54,13 +54,35 @@ void spawn_billard_triangle(verlet_sim_t *sim, int center_x, int center_y, int b
     // Getting the lowest(highest on  the screen) y coord of the ball
     for (size_t i = layer_count; i != 0; i--)
     {
-        int current_y = center_y - (i/1.15 * ball_diameter); //<--- 1.15? why 💀 
+        int current_y = center_y - (i/1.075 * ball_diameter); //<--- 1.075? why 💀 
         int current_x = center_x - (i/2.0 * ball_diameter);
         for (size_t ball = 0; ball < i; ball++)
         {  
             add_circle(sim, ball_radius, current_x+(ball*ball_diameter), current_y,  rainbow_color(sim_get_object_count(sim)), 0 , 0, false);
         }
     }
+}
+
+void spawn_plinko(verlet_sim_t *sim, int rows, int post_radius){
+    int sim_h = sim_get_height(sim);
+    int sim_w = sim_get_height(sim);
+    int row_posts = 3;
+    int height_start = sim_h/10;
+    int y_spacing = (sim_h - sim_h/10 - height_start) / rows;
+    int width_start = sim_w/10;
+    int x_spacing = (sim_w - sim_w/10 - width_start) / (row_posts+rows-1);
+
+    color_t post_color = {.r = 0, .g = 0, .b = 0 };
+    for (int row = 0; row < rows; row++)
+    {
+        for (int post = 0; post < row_posts; post++)
+        {
+            add_circle(sim, post_radius, (1920-1080)+ width_start/2 + x_spacing*post - row*(x_spacing/2), height_start + row * y_spacing, post_color, 0.0, 0.0, true);
+        }
+        
+        row_posts++;        
+    }
+    
 }
 
 enum sim_scenario {
@@ -72,6 +94,7 @@ enum sim_scenario {
 
     SCENARIO_COUNT
 };
+const char * SCENARIO_NAMES[SCENARIO_COUNT] = {"Empty", "Random", "Cloth", "Plinko", "Pool"};
 
 verlet_sim_t * new_simulation(enum sim_scenario scenario){
     verlet_sim_t *sim = init_simulation(SQUARE, 1920/2, 1080/2, 1080/2, WINDOW_WIDTH, WINDOW_HEIGHT, GRID_WIDTH, GRID_HEIGHT, GRAV_X, GRAV_Y);
@@ -87,10 +110,14 @@ verlet_sim_t * new_simulation(enum sim_scenario scenario){
         spawn_cloth(sim, 2*CIRCLE_RADIUS, 25, 1);
         break;
 
+    case SCENARIO_PLINKO:
+        spawn_plinko(sim, 20, 7);
+        break;
+
     case SCENARIO_POOL:
-        spawn_billard_triangle(sim, 1920/2, 1080/2, 11, 6);
         vector gravity = {.x = 0, .y = 0};
         sim_set_gravity(sim, gravity);
+        spawn_billard_triangle(sim, 1920/2, 1080/2, 11, 6);
         break;
     default:
         break;
@@ -319,29 +346,18 @@ int main(int argc, char* argv[]) {
         igSliderInt("Circle Radius", &gui_circle_radius, 1, 30, "%d", 0);
 
         ImVec2 buttonSize = {.x = 0, .y = 0};
-        if (igButton("Empty", buttonSize)){
-            destroy_simulation(sim);
-            sim = new_simulation(SCENARIO_EMPTY);
-            gui_spawn_player_ball = false;
+        float button_spacing = 0.0;
+        for (int scenario = 0; scenario < SCENARIO_COUNT; scenario++)
+        {
+            if (igButton(SCENARIO_NAMES[scenario], buttonSize)){
+                destroy_simulation(sim);
+                sim = new_simulation(scenario);
+                gui_spawn_player_ball = false;
+            }
+            button_spacing -= 1.0;
+            if (scenario < SCENARIO_COUNT - 1) igSameLine(0.0f, button_spacing);
         }
-        igSameLine(0.0f, -1.0f);
-        if (igButton("Cloth", buttonSize)){
-            destroy_simulation(sim);
-            sim = new_simulation(SCENARIO_CLOTH);
-            gui_spawn_player_ball = false;
-        }
-        igSameLine(0.0f, -2.0f);
-        if (igButton("Random", buttonSize)){
-            destroy_simulation(sim);
-            sim = new_simulation(SCENARIO_RANDOM);
-            gui_spawn_player_ball = false;
-        }
-        igSameLine(0.0f, -3.0f);
-        if (igButton("Pool", buttonSize)){
-            destroy_simulation(sim);
-            sim = new_simulation(SCENARIO_POOL);
-            gui_spawn_player_ball = false;
-        }
+        
         if(igButton("Spawn Mouse Balls", buttonSize) && !gui_spawn_player_ball){
             gui_spawn_player_ball = !gui_spawn_player_ball;
             gui_player_ball_id = sim_get_object_count(sim);
