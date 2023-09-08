@@ -176,6 +176,7 @@ int main(int argc, char* argv[]) {
     float view_offset_x = 0.0;
     float view_offset_y = 0.0;
     bool gui_spawn_player_ball = false;
+    bool pause_sim = false;
     size_t gui_player_ball_id = 0;
     while(program_launched)
     {
@@ -273,6 +274,10 @@ int main(int argc, char* argv[]) {
                         };
                         continue;
                     
+                    case SDLK_SPACE:
+                        pause_sim = !pause_sim;
+                        continue;
+
                     case SDLK_ESCAPE:
                         printf("Esc pressed, closing simulation\n");
                         program_launched = false;
@@ -369,7 +374,9 @@ int main(int argc, char* argv[]) {
         igEnd();
 
         // unsigned int start_time_simulation = SDL_GetPerformanceCounter();
-        update_simulation(sim, 1/60.0);
+        if (!pause_sim){
+            update_simulation(sim, 1/60.0);
+        }
         // unsigned int end_time_simulation = SDL_GetPerformanceCounter();
         if (gui_spawn_player_ball){
             int x,y;
