@@ -18,7 +18,7 @@
 void verlet_standard_config(void){
     verlet_sim_t * reference = sim_load_file("standardSave.txt");
 
-    verlet_sim_t * s = init_simulation(CIRCLE, CONSTRAINT_CENTER_X, CONSTRAINT_CENTER_Y, CONSTRAINT_RADIUS, WINDOW_WIDTH, WINDOW_HEIGHT, GRID_WIDTH, GRID_HEIGHT);
+    verlet_sim_t * s = init_simulation(CIRCLE, CONSTRAINT_CENTER_X, CONSTRAINT_CENTER_Y, CONSTRAINT_RADIUS, WINDOW_WIDTH, WINDOW_HEIGHT, GRID_WIDTH, GRID_HEIGHT, 0, 1000);
 
     int circle_radius = 5;
     int x_spawn = CONSTRAINT_CENTER_X - CONSTRAINT_RADIUS + circle_radius;

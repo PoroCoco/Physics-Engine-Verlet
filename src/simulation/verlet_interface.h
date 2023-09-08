@@ -13,7 +13,7 @@ enum constraint_shape {
 typedef struct verlet_sim verlet_sim_t;
 
 
-verlet_sim_t *init_simulation(enum constraint_shape shape, float constraint_center_x, float constraint_center_y, unsigned int constraint_radius, unsigned int width, unsigned int height, unsigned int grid_width, unsigned int grid_height);
+verlet_sim_t *init_simulation(enum constraint_shape shape, float constraint_center_x, float constraint_center_y, unsigned int constraint_radius, unsigned int width, unsigned int height, unsigned int grid_width, unsigned int grid_height, int grav_x, int grav_y);
 
 void update_simulation(verlet_sim_t *sim, float dt);
 
@@ -48,7 +48,6 @@ vector sim_get_gravity(verlet_sim_t *sim);
 void sim_set_gravity(verlet_sim_t *sim, vector gravity);
 
 verlet_circle *sim_get_nth_circle(verlet_sim_t *sim, unsigned int n);
-
 
 void add_circle(verlet_sim_t *sim, unsigned int radius, float px, float py, color_t color, float acc_x, float acc_y);
 
