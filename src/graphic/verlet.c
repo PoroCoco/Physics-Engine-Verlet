@@ -26,7 +26,6 @@ void spawn_random_sticks(verlet_sim_t *sim, size_t count, int height, int width,
             add_stick(sim, p0, p1, 100.0);
             p0 = p1;
         }
-        
     }
 }
 
@@ -35,7 +34,7 @@ void spawn_cloth(verlet_sim_t *sim, float spread, int cols, int rows){
     float start_y = 200.0;
     for (size_t i = 0; i < rows; i++){
         for (size_t j = 0; j < cols; j++){
-            add_circle(sim, CIRCLE_RADIUS, start_x + j*spread, start_y + i*spread, rainbow_color(sim_get_object_count(sim)), 0, 0, i==0 && (j%2 == 0));
+            add_circle(sim, CIRCLE_RADIUS, start_x + j*spread, start_y + i*spread, rainbow_color(sim_get_object_count(sim)), 0, 0, (i==0 && j == 0) || (i == 0  && j == cols-1));
         }
     }
 
@@ -47,9 +46,21 @@ void spawn_cloth(verlet_sim_t *sim, float spread, int cols, int rows){
             if (i + 1 < rows) add_stick(sim, c, sim_get_nth_circle(sim, c_index + cols), spread);
         }
     }
-    
+}
 
-    return;
+void spawn_billard_triangle(verlet_sim_t *sim, int center_x, int center_y, int ball_radius, size_t layer_count){
+    assert(layer_count%2 == 0);
+    int ball_diameter = ball_radius*2;
+    // Getting the lowest(highest on  the screen) y coord of the ball
+    for (size_t i = layer_count; i != 0; i--)
+    {
+        int current_y = center_y - (i/1.15 * ball_diameter); //<--- 1.15? why 💀 
+        int current_x = center_x - (i/2.0 * ball_diameter);
+        for (size_t ball = 0; ball < i; ball++)
+        {  
+            add_circle(sim, ball_radius, current_x+(ball*ball_diameter), current_y,  rainbow_color(sim_get_object_count(sim)), 0 , 0, false);
+        }
+    }
 }
 
 enum sim_scenario {
@@ -57,12 +68,13 @@ enum sim_scenario {
     SCENARIO_RANDOM,
     SCENARIO_CLOTH,
     SCENARIO_PLINKO,
+    SCENARIO_POOL,
 
     SCENARIO_COUNT
 };
 
 verlet_sim_t * new_simulation(enum sim_scenario scenario){
-    verlet_sim_t *sim = init_simulation(SQUARE, 1920/2, 1080/2, 1080/2, WINDOW_WIDTH, WINDOW_HEIGHT, GRID_WIDTH, GRID_HEIGHT);
+    verlet_sim_t *sim = init_simulation(SQUARE, 1920/2, 1080/2, 1080/2, WINDOW_WIDTH, WINDOW_HEIGHT, GRID_WIDTH, GRID_HEIGHT, GRAV_X, GRAV_Y);
     assert(sim);
 
     switch (scenario)
@@ -72,15 +84,22 @@ verlet_sim_t * new_simulation(enum sim_scenario scenario){
         break;
     
     case SCENARIO_CLOTH:
-        spawn_cloth(sim, 20, 25, 36);
+        spawn_cloth(sim, 2*CIRCLE_RADIUS, 25, 1);
         break;
 
+    case SCENARIO_POOL:
+        spawn_billard_triangle(sim, 1920/2, 1080/2, 11, 6);
+        vector gravity = {.x = 0, .y = 0};
+        sim_set_gravity(sim, gravity);
+        break;
     default:
         break;
     }
 
     return sim;
 }
+
+
 
 int main(int argc, char* argv[]) {
 
@@ -126,6 +145,11 @@ int main(int argc, char* argv[]) {
     bool button_mousedown_left = false;
     bool button_mousedown_right = false;
     verlet_circle *selected_circle = NULL;
+    float zoom_level = 1.0;
+    float view_offset_x = 0.0;
+    float view_offset_y = 0.0;
+    bool gui_spawn_player_ball = false;
+    size_t gui_player_ball_id = 0;
     while(program_launched)
     {
         unsigned int start_time = SDL_GetPerformanceCounter();
@@ -133,7 +157,9 @@ int main(int argc, char* argv[]) {
         SDL_GL_GetDrawableSize(gui->window, &display_w, &display_h);
 
         static float gui_constraint_radius = 1.0f;
-        static int gui_gravity = 1000;
+        vector g = sim_get_gravity(sim);
+        static int gui_gravity = 1;
+        gui_gravity = g.y;
         static int gui_sub_steps = 5;
         static int gui_thread_count = 8;
         static int gui_circle_radius = CIRCLE_RADIUS;
@@ -167,9 +193,35 @@ int main(int argc, char* argv[]) {
                     }
                     break;
 
+                case SDL_MOUSEWHEEL:
+                    if (event.wheel.y > 0) {
+                        // Zoom in
+                        zoom_level *= 1.1f;
+                    } else if (event.wheel.y < 0) {
+                        // Zoom out
+                        zoom_level /= 1.1f;
+                    }
+                    break;
+
                 case SDL_KEYDOWN:
                     switch (event.key.keysym.sym)
                     {
+                    case SDLK_UP:
+                        // Pan the view downward
+                        view_offset_y -= 0.1f; 
+                        break;
+                    case SDLK_DOWN:
+                        // Pan the view upward
+                        view_offset_y += 0.1f;
+                        break;
+                    case SDLK_LEFT:
+                        // Pan the view to the right
+                        view_offset_x += 0.1f;
+                        break;
+                    case SDLK_RIGHT:
+                        // Pan the view to the left 
+                        view_offset_x -= 0.1f;
+                        break;
                     case SDLK_s:
                         printf("s pressed, saving simulation\n");
                         sim_save_current_state(sim, "saved.txt");
@@ -228,6 +280,15 @@ int main(int argc, char* argv[]) {
                 selected_circle->position_old.y = y;
             }
         }
+        if (gui_spawn_player_ball){
+            int x,y;
+            SDL_GetMouseState( &x, &y );
+            verlet_circle *c =  sim_get_nth_circle(sim, gui_player_ball_id);
+            c->position_current.x = x/1.0;
+            c->position_current.y = y/1.0;
+            c->position_old.x = x/1.0;
+            c->position_old.y = y/1.0;
+        }
 
         // if (sim_get_object_count(sim) < 0) add_circle(sim, CIRCLE_RADIUS, CONSTRAINT_CENTER_X+300, CONSTRAINT_CENTER_Y+300, rainbow_color(sim_get_object_count(sim)), 0, 0);
         // if (sim_get_object_count(sim) < 0) add_circle(sim, CIRCLE_RADIUS, CONSTRAINT_CENTER_X-150, CONSTRAINT_CENTER_Y-150, rainbow_color(sim_get_object_count(sim)), 0, 0);
@@ -261,18 +322,31 @@ int main(int argc, char* argv[]) {
         if (igButton("Empty", buttonSize)){
             destroy_simulation(sim);
             sim = new_simulation(SCENARIO_EMPTY);
+            gui_spawn_player_ball = false;
         }
         igSameLine(0.0f, -1.0f);
         if (igButton("Cloth", buttonSize)){
             destroy_simulation(sim);
             sim = new_simulation(SCENARIO_CLOTH);
+            gui_spawn_player_ball = false;
         }
         igSameLine(0.0f, -2.0f);
         if (igButton("Random", buttonSize)){
             destroy_simulation(sim);
             sim = new_simulation(SCENARIO_RANDOM);
+            gui_spawn_player_ball = false;
         }
-        // igText("counter = %d", counter);
+        igSameLine(0.0f, -3.0f);
+        if (igButton("Pool", buttonSize)){
+            destroy_simulation(sim);
+            sim = new_simulation(SCENARIO_POOL);
+            gui_spawn_player_ball = false;
+        }
+        if(igButton("Spawn Mouse Balls", buttonSize) && !gui_spawn_player_ball){
+            gui_spawn_player_ball = !gui_spawn_player_ball;
+            gui_player_ball_id = sim_get_object_count(sim);
+            add_circle(sim, 30, 0, 0, rainbow_color(sim_get_object_count(sim)), 0, 0, true);
+        }
 
         igText("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / igGetIO()->Framerate, igGetIO()->Framerate);
         igText("Number of objects : %zu", sim_get_object_count(sim) + sim_get_stick_count(sim));
@@ -281,6 +355,15 @@ int main(int argc, char* argv[]) {
         // unsigned int start_time_simulation = SDL_GetPerformanceCounter();
         update_simulation(sim, 1/60.0);
         // unsigned int end_time_simulation = SDL_GetPerformanceCounter();
+        if (gui_spawn_player_ball){
+            int x,y;
+            SDL_GetMouseState( &x, &y );
+            verlet_circle *c =  sim_get_nth_circle(sim, gui_player_ball_id);
+            c->position_current.x = x/1.0;
+            c->position_current.y = y/1.0;
+            c->position_old.x = x/1.0;
+            c->position_old.y = y/1.0;
+        }
 
        if(button_mousedown_right){
             int x,y;
@@ -296,11 +379,12 @@ int main(int argc, char* argv[]) {
         // Rendering
         glMatrixMode(GL_PROJECTION);
         glLoadIdentity();
+        glTranslatef(view_offset_x, view_offset_y, 0.0f);
         float aspectRatio = (float)display_w / (float)display_h;
         if (display_w >= display_h) {
-            glOrtho(-aspectRatio, aspectRatio, -1.0f, 1.0f, -1.0f, 1.0f);
+            glOrtho(-aspectRatio / zoom_level, aspectRatio / zoom_level, -1.0f / zoom_level, 1.0f / zoom_level, -1.0f, 1.0f);
         } else {
-            glOrtho(-1.0f, 1.0f, -1.0f / aspectRatio, 1.0f / aspectRatio, -1.0f, 1.0f);
+            glOrtho(-1.0f / zoom_level, 1.0f / zoom_level, -1.0f / aspectRatio / zoom_level, 1.0f / aspectRatio / zoom_level, -1.0f, 1.0f);
         }
 
         glViewport(0, 0, display_w, display_h);

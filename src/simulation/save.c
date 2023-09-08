@@ -37,7 +37,7 @@ verlet_sim_t * sim_load_file(char * file_path){
         exit(1);
     }
     enum constraint_shape constraint_shape = (enum constraint_shape)shape;
-    verlet_sim_t * s = init_simulation(constraint_shape, constraint_x, constraint_y, constraint_radius, width, height, grid_width, grid_height);
+    verlet_sim_t * s = init_simulation(constraint_shape, constraint_x, constraint_y, constraint_radius, width, height, grid_width, grid_height, 0, 1000);
     assert(s);
 
     float circle_x, circle_y, circle_acc_x, circle_acc_y;

@@ -37,7 +37,7 @@ typedef struct verlet_sim {
 
 
 
-verlet_sim_t *init_simulation(enum constraint_shape shape, float constraint_center_x, float constraint_center_y, unsigned int constraint_radius, unsigned int width, unsigned int height, unsigned int grid_width, unsigned int grid_height){
+verlet_sim_t *init_simulation(enum constraint_shape shape, float constraint_center_x, float constraint_center_y, unsigned int constraint_radius, unsigned int width, unsigned int height, unsigned int grid_width, unsigned int grid_height, int grav_x, int grav_y){
     verlet_sim_t *s = malloc(sizeof(verlet_sim_t));
     _check_malloc(s, __LINE__, __FILE__);
     
@@ -53,7 +53,7 @@ verlet_sim_t *init_simulation(enum constraint_shape shape, float constraint_cent
     s->height = height;
     s->width = width;
 
-    vector gravity = {.x = 0, .y = 1000};
+    vector gravity = {.x = grav_x/1.0, .y = grav_y/1.0};
     s->gravity = gravity;
     s->sub_steps = SUB_STEPS;
     s->thread_count = THREAD_COUNT;
@@ -87,10 +87,25 @@ void apply_constraint(verlet_sim_t *sim){
         for (size_t i = 0; i < sim->circle_count; i++)
         {
             verlet_circle *c = sim->circles + i;
-            if (c->position_current.y - c->radius < sim->constraint_center.y - sim->constraint_radius) c->position_current.y = sim->constraint_center.y - sim->constraint_radius + c->radius;
-            if (c->position_current.y + c->radius > sim->constraint_center.y + sim->constraint_radius) c->position_current.y = sim->constraint_center.y + sim->constraint_radius - c->radius;
-            if (c->position_current.x + c->radius > sim->constraint_center.x + sim->constraint_radius) c->position_current.x = sim->constraint_center.x + sim->constraint_radius - c->radius;
-            if (c->position_current.x - c->radius < sim->constraint_center.x - sim->constraint_radius) c->position_current.x = sim->constraint_center.x - sim->constraint_radius + c->radius;
+            float vel_x = (c->position_current.x - c->position_old.x)/1.5;
+            float vel_y = (c->position_current.y - c->position_old.y)/1.5;
+
+            if (c->position_current.y - c->radius < sim->constraint_center.y - sim->constraint_radius){
+                c->position_current.y = sim->constraint_center.y - sim->constraint_radius + c->radius;
+                c->position_old.y = c->position_current.y + vel_y;
+            } 
+            if (c->position_current.y + c->radius > sim->constraint_center.y + sim->constraint_radius){
+                c->position_current.y = sim->constraint_center.y + sim->constraint_radius - c->radius;
+                c->position_old.y = c->position_current.y + vel_y;
+            } 
+            if (c->position_current.x + c->radius > sim->constraint_center.x + sim->constraint_radius){
+                c->position_current.x = sim->constraint_center.x + sim->constraint_radius - c->radius;
+                c->position_old.x = c->position_current.x + vel_x;
+            } 
+            if (c->position_current.x - c->radius < sim->constraint_center.x - sim->constraint_radius){
+                c->position_current.x = sim->constraint_center.x - sim->constraint_radius + c->radius;
+                c->position_old.x = c->position_current.x + vel_x;
+            }
         }
     }else if (sim->constraint_shape == CIRCLE){
         for (size_t i = 0; i < sim->circle_count; i++)
@@ -385,6 +400,7 @@ void thread_col(verlet_sim_t *sim){
     gettimeofday(&end_time, NULL);
     time_spent = (end_time.tv_sec - start_time.tv_sec) + (end_time.tv_usec - start_time.tv_usec) / 1e3;
     printf("\tTime spent in collision resolution: %f microseconds\n", time_spent);
+    free(collisions);
 
 }
 
@@ -402,7 +418,9 @@ void update_simulation(verlet_sim_t *sim, float dt){
     uint sub_steps = sim->sub_steps;
     float sub_dt = dt/(float)sub_steps;
     struct timeval start_time, end_time;
+    struct timeval total_start_time, total_end_time;
     double time_spent;  
+    gettimeofday(&total_start_time, NULL);    
 
     for (size_t i = 0; i < sub_steps; i++)
     {
@@ -413,6 +431,7 @@ void update_simulation(verlet_sim_t *sim, float dt){
         time_spent = (end_time.tv_sec - start_time.tv_sec) + (end_time.tv_usec - start_time.tv_usec) / 1e3;
         // printf("Time spent in apply gravity: %f microseconds\n", time_spent);
         
+
         gettimeofday(&start_time, NULL);    
         apply_constraint(sim);
         gettimeofday(&end_time, NULL);
@@ -440,6 +459,10 @@ void update_simulation(verlet_sim_t *sim, float dt){
         update_sticks(sim, sub_dt);
     }
     sim->total_frames++;
+    gettimeofday(&total_end_time, NULL);    
+    time_spent = (total_end_time.tv_sec - total_start_time.tv_sec) + (total_end_time.tv_usec - total_start_time.tv_usec) / 1e3;
+    printf("Simulation frametime : %f microseconds\n", time_spent);  
+
 }
 
 
