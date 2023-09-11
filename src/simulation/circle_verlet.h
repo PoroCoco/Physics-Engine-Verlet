@@ -26,6 +26,9 @@ typedef struct verlet_circle {
 
 void update_position_circle(verlet_circle *c, float dt);
 void accelerate_circle(verlet_circle *c, vector *acc);
+vector circle_get_position(verlet_circle *c);
+float circle_get_position_x(verlet_circle *c);
+float circle_get_position_y(verlet_circle *c);
 
 float vector_length(vector v);
 vector vector_create(float x, float y);

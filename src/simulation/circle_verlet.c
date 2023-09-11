@@ -34,3 +34,15 @@ void accelerate_circle(verlet_circle *c, vector *acc){
     c->acceleration.y += acc->y;
     c->acceleration.x += acc->x;
 }
+
+vector circle_get_position(verlet_circle *c){
+    return vector_create(c->position_current.x, c->position_current.y);
+}
+
+float circle_get_position_x(verlet_circle *c){
+    return c->position_current.x;
+}
+
+float circle_get_position_y(verlet_circle *c){
+    return c->position_current.y;
+}
