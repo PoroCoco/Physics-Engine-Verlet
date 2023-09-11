@@ -23,15 +23,19 @@ void spawn_random_sticks(verlet_sim_t *sim, size_t count, int height, int width)
 
 int main(int argc, char const *argv[])
 {
-    verlet_sim_t *sim = init_simulation(SQUARE, 1920/2, 1080/2, 1080/2, WINDOW_WIDTH, WINDOW_HEIGHT, GRID_WIDTH, GRID_HEIGHT);
-    spawn_random_circles(sim, 100, WINDOW_HEIGHT, WINDOW_WIDTH);
-    spawn_random_sticks(sim, 100, WINDOW_HEIGHT, WINDOW_WIDTH);
+    argc = argc;
+    argv = argv;
+    verlet_sim_t *sim = init_simulation(SQUARE, 1920/2, 1080/2, 1080/2, WINDOW_WIDTH, WINDOW_HEIGHT, GRID_WIDTH, GRID_HEIGHT, GRAV_X, GRAV_Y);
+    spawn_random_circles(sim, 1000, WINDOW_HEIGHT, WINDOW_WIDTH);
+    // spawn_random_sticks(sim, 100, WINDOW_HEIGHT, WINDOW_WIDTH);
 
-    for (size_t i = 0; i < 10; i++)
+    for (size_t i = 0; i < 300; i++)
     {
         update_simulation(sim, 1/60.0);
     }
     
+    sim_save_current_state(sim, "test_save.data");
+
     destroy_simulation(sim);
 
     return 0;

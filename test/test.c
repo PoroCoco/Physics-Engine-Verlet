@@ -3,33 +3,19 @@
 #include <stdio.h>
 
 #include "verlet_interface.h"
+#include "config.h"
 
-
-#define WINDOW_WIDTH 1920
-#define WINDOW_HEIGHT 1080
-#define CIRCLE_RADIUS 25
-#define CONSTRAINT_CENTER_X (WINDOW_WIDTH/2.0)
-#define CONSTRAINT_CENTER_Y (WINDOW_HEIGHT/2.0)
-#define CONSTRAINT_RADIUS ((WINDOW_HEIGHT/2.0))
-#define GRID_WIDTH 1
-#define GRID_HEIGHT 1
-
+void spawn_random_circles(verlet_sim_t *sim, size_t count, int height, int width){
+    for (size_t i = 0; i < count; i++)
+        add_circle(sim, CIRCLE_RADIUS, rand()%width, rand()%height, rainbow_color(sim_get_object_count(sim)), 0, 0, false);
+}
 
 void verlet_standard_config(void){
-    verlet_sim_t * reference = sim_load_file("standardSave.txt");
+    verlet_sim_t * reference = sim_load_file("../test/test_save.data");
 
-    verlet_sim_t * s = init_simulation(CIRCLE, CONSTRAINT_CENTER_X, CONSTRAINT_CENTER_Y, CONSTRAINT_RADIUS, WINDOW_WIDTH, WINDOW_HEIGHT, GRID_WIDTH, GRID_HEIGHT, 0, 1000);
+    verlet_sim_t *s = init_simulation(SQUARE, 1920/2, 1080/2, 1080/2, WINDOW_WIDTH, WINDOW_HEIGHT, GRID_WIDTH, GRID_HEIGHT, GRAV_X, GRAV_Y);
+    spawn_random_circles(s, 1000, WINDOW_HEIGHT, WINDOW_WIDTH);
 
-    int circle_radius = 5;
-    int x_spawn = CONSTRAINT_CENTER_X - CONSTRAINT_RADIUS + circle_radius;
-    while (x_spawn < CONSTRAINT_CENTER_X + CONSTRAINT_RADIUS - circle_radius)
-    {
-        add_circle(s, circle_radius, x_spawn, CONSTRAINT_CENTER_Y, rainbow_color(1.0), 0.0, 0.0);        
-        x_spawn += (2 * circle_radius);
-        circle_radius--;
-        if (circle_radius <= 4) circle_radius = 10;
-    }
-    
     for (size_t i = 0; i < 300; i++)
     {
         update_simulation(s, 1.0/60.0);
@@ -47,7 +33,7 @@ void verlet_standard_config(void){
 
     }
     
-
+    printf("Correct simulation behaviour\n");
 
     destroy_simulation(s);
     destroy_simulation(reference);
