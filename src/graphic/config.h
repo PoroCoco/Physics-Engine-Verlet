@@ -9,7 +9,6 @@
 #define CONSTRAINT_RADIUS 1.
 #define GRID_WIDTH 72
 #define GRID_HEIGHT 72
-#define SPACE_HASH_WIDTH CIRCLE_RADIUS*2
 #define GRAV_X 0
 #define GRAV_Y 1000
 

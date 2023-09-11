@@ -46,6 +46,11 @@ sp_grid* spacehash_init(float width, float height, float cell_width, float (*get
         {
             g->matrix[col][row] = malloc(sizeof(*g->matrix[col][row]) * MAX_ELEMENTS_IN_CELL);
             assert(g->matrix[col][row]);
+            for (size_t element = 0; element < MAX_ELEMENTS_IN_CELL; element++)
+            {
+                g->matrix[col][row][element] = NULL;
+            }
+            
         }
     }
 
@@ -56,13 +61,14 @@ sp_grid* spacehash_init(float width, float height, float cell_width, float (*get
     {
         g->matrix_count[col] = malloc(sizeof(*g->matrix_count[col]) * g->row_count);
         assert(g->matrix_count[col]);
+        for (size_t row = 0; row < g->row_count; row++)
+        {
+            g->matrix_count[col][row] = 0;
+        }        
     }
 
     g->get_element_x = get_element_x;
     g->get_element_y = get_element_y;
-
-    // To fill the matrix with NULL and reset the counts to 0
-    spacehash_reset(g);
 
     return g;
 }
@@ -86,12 +92,12 @@ void spacehash_reset(sp_grid* g){
 }
 
 void spacehash_add(sp_grid* g, void *element){
-    printf("add element : x_coord %f\n", g->get_element_x(element));
+    assert(element != NULL);
     int col = g->get_element_x(element) / g->cell_width;
     int row = g->get_element_y(element) / g->cell_width;
-    if (col >= g->col_count) col = g->col_count - 1; 
+    if (col >= (int)g->col_count) col = g->col_count - 1; 
     if (col < 0) col = 0; 
-    if (row >= g->row_count) row = g->row_count - 1; 
+    if (row >= (int)g->row_count) row = g->row_count - 1; 
     if (row < 0) row = 0; 
     size_t elements_in_cell = g->matrix_count[col][row];
 
@@ -99,7 +105,6 @@ void spacehash_add(sp_grid* g, void *element){
         fprintf(stderr, "Spatial hashing : Couldn't fit more elements in the cell when adding a new element ! Increase the maximum amount of element in a cell.\n");
         return;
     }
-    printf("Adding element %p at (%d,%d)\n", element, col, row);
     g->matrix[col][row][elements_in_cell] = element;
     g->matrix_count[col][row] += 1;
 }
@@ -109,23 +114,38 @@ void spacehash_query(sp_grid* g, void *element, void **neighbors, size_t max_nei
     if (max_neighbors == 0) return;
     int col = g->get_element_x(element) / g->cell_width;
     int row = g->get_element_y(element) / g->cell_width;
-    if (col >= g->col_count) col = g->col_count - 1; 
+    if (col >= (int)g->col_count) col = g->col_count - 1; 
     if (col < 0) col = 0; 
-    if (row >= g->row_count) row = g->row_count - 1; 
+    if (row >= (int)g->row_count) row = g->row_count - 1; 
     if (row < 0) row = 0; 
-
-    size_t elements_in_cell = g->matrix_count[col][row];
-    if (elements_in_cell > max_neighbors){
-        fprintf(stderr, "Spatial hashing : Couldn't fit all the neighbors into the given array when querying (%zu > %zu)! Increase the size of the neighbors array.\n", elements_in_cell, max_neighbors);
-    }
-
-    size_t i = 0;
+    
+    size_t neighbor_index = 0;
     neighbors[0] = NULL;
-    while(i < max_neighbors && g->matrix[col][row][i] != NULL){
-        neighbors[i] = g->matrix[col][row][i];
-        if (i+1 < max_neighbors) neighbors[i+1] = NULL;
-        i++;
+    for (int x = -1; x < 2; x++){
+        for (int y = -1; y < 2; y++){
+            size_t cell_elements_index = 0;
+            int transform_col = col + x;
+            int transform_row = row + y;
+            if (transform_col >= (int)g->col_count) transform_col = g->col_count - 1; 
+            if (transform_col < 0) transform_col = 0; 
+            if (transform_row >= (int)g->row_count) transform_row = g->row_count - 1; 
+            if (transform_row < 0) transform_row = 0; 
+            
+
+            while(neighbor_index < max_neighbors && g->matrix[transform_col][transform_row][cell_elements_index] != NULL){
+                neighbors[neighbor_index] = g->matrix[transform_col][transform_row][cell_elements_index];
+                if (neighbor_index+1 < max_neighbors) neighbors[neighbor_index+1] = NULL;
+                neighbor_index++;
+                cell_elements_index++;
+                if (neighbor_index == max_neighbors){
+                    fprintf(stderr, "Spatial hashing : Couldn't fit all the neighbors into the given array when querying (%zu >= %zu)! Increase the size of the neighbors array.\n", neighbor_index, max_neighbors);
+                    return;
+                }
+            }
+        }
     }
+    
+
 }
 
 void spacehash_free(sp_grid* g){

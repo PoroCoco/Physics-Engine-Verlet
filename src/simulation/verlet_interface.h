@@ -14,7 +14,7 @@ enum constraint_shape {
 typedef struct verlet_sim verlet_sim_t;
 
 
-verlet_sim_t *init_simulation(enum constraint_shape shape, float constraint_center_x, float constraint_center_y, unsigned int constraint_radius, unsigned int width, unsigned int height, unsigned int grid_width, unsigned int grid_height, int grav_x, int grav_y, float spatial_hashing_cell_width);
+verlet_sim_t *init_simulation(enum constraint_shape shape, float constraint_center_x, float constraint_center_y, unsigned int constraint_radius, unsigned int width, unsigned int height, unsigned int grid_width, unsigned int grid_height, int grav_x, int grav_y);
 
 void update_simulation(verlet_sim_t *sim, float dt);
 

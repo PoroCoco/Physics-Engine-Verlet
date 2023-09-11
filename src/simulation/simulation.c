@@ -23,6 +23,7 @@ typedef struct verlet_sim {
 
     struct grid *grid;
     sp_grid* space_grid;
+    uint biggest_circle_radius;
     vector constraint_center;
     uint constraint_radius;
 
@@ -39,7 +40,7 @@ typedef struct verlet_sim {
 
 
 
-verlet_sim_t *init_simulation(enum constraint_shape shape, float constraint_center_x, float constraint_center_y, unsigned int constraint_radius, unsigned int width, unsigned int height, unsigned int grid_width, unsigned int grid_height, int grav_x, int grav_y, float spatial_hashing_cell_width){
+verlet_sim_t *init_simulation(enum constraint_shape shape, float constraint_center_x, float constraint_center_y, unsigned int constraint_radius, unsigned int width, unsigned int height, unsigned int grid_width, unsigned int grid_height, int grav_x, int grav_y){
     verlet_sim_t *s = malloc(sizeof(verlet_sim_t));
     _check_malloc(s, __LINE__, __FILE__);
     
@@ -51,10 +52,11 @@ verlet_sim_t *init_simulation(enum constraint_shape shape, float constraint_cent
     s->constraint_center = vector_create(constraint_center_x, constraint_center_y);
     s->constraint_radius = constraint_radius;
 
-    s->space_grid = spacehash_init(width, height, spatial_hashing_cell_width, (float (*)(void*))circle_get_position_x, (float (*)(void*))circle_get_position_y);
+    s->space_grid = spacehash_init(width, height, 5., (float (*)(void*))circle_get_position_x, (float (*)(void*))circle_get_position_y);
     s->grid = create_grid(grid_width, grid_height);    
     s->height = height;
     s->width = width;
+    s->biggest_circle_radius = 0;
 
     vector gravity = {.x = grav_x/1.0, .y = grav_y/1.0};
     s->gravity = gravity;
@@ -487,6 +489,12 @@ verlet_circle * add_circle(verlet_sim_t *sim, uint radius, float px, float py, c
     new_circle->pinned = pinned;
 
     sim->circle_count += 1;
+
+    // Update the spatial hashing width if the new circle have the biggest radius 
+    if (new_circle->radius > sim->biggest_circle_radius && new_circle->radius > 5){
+        sim->biggest_circle_radius = new_circle->radius;
+        spacehash_update_cell_width(&sim->space_grid, 1.2*new_circle->radius);
+    }
 
     // Pointer on the circle 
     return  &sim->circles[sim->circle_count - 1];
