@@ -12,6 +12,7 @@
 #include "circle_verlet.h"
 #include "grid.h"
 #include "sticks.h"
+#include "spatial_hashing.h"
 
 typedef struct verlet_sim {
     size_t circle_count;
@@ -21,6 +22,7 @@ typedef struct verlet_sim {
     stick sticks[SIM_MAX_STICKS];
 
     struct grid *grid;
+    sp_grid* space_grid;
     vector constraint_center;
     uint constraint_radius;
 
@@ -37,7 +39,7 @@ typedef struct verlet_sim {
 
 
 
-verlet_sim_t *init_simulation(enum constraint_shape shape, float constraint_center_x, float constraint_center_y, unsigned int constraint_radius, unsigned int width, unsigned int height, unsigned int grid_width, unsigned int grid_height, int grav_x, int grav_y){
+verlet_sim_t *init_simulation(enum constraint_shape shape, float constraint_center_x, float constraint_center_y, unsigned int constraint_radius, unsigned int width, unsigned int height, unsigned int grid_width, unsigned int grid_height, int grav_x, int grav_y, float spatial_hashing_cell_width){
     verlet_sim_t *s = malloc(sizeof(verlet_sim_t));
     _check_malloc(s, __LINE__, __FILE__);
     
@@ -49,6 +51,7 @@ verlet_sim_t *init_simulation(enum constraint_shape shape, float constraint_cent
     s->constraint_center = vector_create(constraint_center_x, constraint_center_y);
     s->constraint_radius = constraint_radius;
 
+    s->space_grid = spacehash_init(width, height, spatial_hashing_cell_width, (float (*)(void*))circle_get_position_x, (float (*)(void*))circle_get_position_y);
     s->grid = create_grid(grid_width, grid_height);    
     s->height = height;
     s->width = width;
@@ -65,6 +68,7 @@ void destroy_simulation(verlet_sim_t *s){
     // if (s->circles) free(s->circles);
     // if (s->sticks) free(s->sticks);
     if (s->grid) destroy_grid(s->grid);
+    if (s->space_grid) spacehash_free(s->space_grid);
     free(s);
 }
 
@@ -203,21 +207,13 @@ void *solve_cell_collisions(void * thread_data){
     return NULL;
 }
 
-void update_grid(verlet_sim_t *sim){
-    //resets the dynamic array of indexes
-    for (size_t y = 0; y < sim->grid->height; y++){
-        for (size_t x = 0; x < sim->grid->width; x++){
-            sim->grid->grid[y][x].count = 0;
-        }
-    }
+void update_spatial_hashing(verlet_sim_t *sim){
+    spacehash_reset(sim->space_grid);
 
     for (size_t i = 0; i < sim->circle_count; i++)
     {
-        uint col = (int)(sim->circles[i].position_current.x /(sim->width/sim->grid->width));
-        uint row = (int)(sim->circles[i].position_current.y /(sim->height/sim->grid->height));
-        add_grid(sim->grid, row, col, i);
+        spacehash_add(sim->space_grid, &sim->circles[i]);
     }
-
 }
 
 void solve_threaded_collision(verlet_sim_t *sim){
@@ -254,15 +250,23 @@ void solve_threaded_collision(verlet_sim_t *sim){
 }
 
 void seq_col(verlet_sim_t *sim){
+    size_t max_neighbors = 1000;
+    verlet_circle * neighbors[max_neighbors];
     for (size_t i = 0; i < sim->circle_count; i++)
     {
-        for (size_t j = 0; j < sim->circle_count; j++)
+        spacehash_query(sim->space_grid, &sim->circles[i], (void**)neighbors, max_neighbors);
+        size_t j = 0;
+        while(j < max_neighbors && neighbors[j] != NULL)
         {
-            solve_circle_collision(&sim->circles[i], &sim->circles[j]);
+            solve_circle_collision(&sim->circles[i], neighbors[j]);
+            j++;
         }
+        // for (size_t j = 0; j < sim->circle_count; j++)
+        // {
+        //     solve_circle_collision(&sim->circles[i], &sim->circles[j]);
+        // }
         
     }
-    
 }
 
 
@@ -445,7 +449,7 @@ void update_simulation(verlet_sim_t *sim, float dt){
      
         gettimeofday(&start_time, NULL);
         // thread_col(sim);
-        // update_grid(sim);
+        update_spatial_hashing(sim);
         // solve_threaded_collision(sim);
         seq_col(sim);
         gettimeofday(&end_time, NULL);

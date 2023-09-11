@@ -97,13 +97,13 @@ enum sim_scenario {
 const char * SCENARIO_NAMES[SCENARIO_COUNT] = {"Empty", "Random", "Cloth", "Plinko", "Pool"};
 
 verlet_sim_t * new_simulation(enum sim_scenario scenario){
-    verlet_sim_t *sim = init_simulation(SQUARE, 1920/2, 1080/2, 1080/2, WINDOW_WIDTH, WINDOW_HEIGHT, GRID_WIDTH, GRID_HEIGHT, GRAV_X, GRAV_Y);
+    verlet_sim_t *sim = init_simulation(SQUARE, 1920/2, 1080/2, 1080/2, WINDOW_WIDTH, WINDOW_HEIGHT, GRID_WIDTH, GRID_HEIGHT, GRAV_X, GRAV_Y, 3.0*SPACE_HASH_WIDTH);
     assert(sim);
 
     switch (scenario)
     {
     case SCENARIO_RANDOM:
-        spawn_random_circles(sim, 500, WINDOW_HEIGHT, WINDOW_WIDTH);
+        spawn_random_circles(sim, 2000, WINDOW_HEIGHT, WINDOW_WIDTH);
         break;
     
     case SCENARIO_CLOTH:
@@ -342,7 +342,7 @@ int main(int argc, char* argv[]) {
             sim_gravity.y = gui_gravity;
             sim_set_gravity(sim, sim_gravity);  
         }
-        if(igSliderInt("Sub Steps", &gui_sub_steps, 0, 20, "%d", 0)){
+        if(igSliderInt("Sub Steps", &gui_sub_steps, 0, 100, "%d", 0)){
             sim_set_sub_steps(sim, gui_sub_steps);  
         }
         if(igSliderInt("Thread Count", &gui_thread_count, 0, 32, "%d", 0)){
