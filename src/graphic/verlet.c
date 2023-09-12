@@ -77,7 +77,7 @@ void spawn_plinko(verlet_sim_t *sim, int rows, int post_radius){
     {
         for (int post = 0; post < row_posts; post++)
         {
-            add_circle(sim, post_radius, (1920-1080)+ width_start/2 + x_spacing*post - row*(x_spacing/2), height_start + row * y_spacing, post_color, 0.0, 0.0, true);
+            add_circle(sim, post_radius, (WINDOW_WIDTH-WINDOW_HEIGHT)+ width_start/2 + x_spacing*post - row*(x_spacing/2), height_start + row * y_spacing, post_color, 0.0, 0.0, true);
         }
         
         row_posts++;        
@@ -97,7 +97,7 @@ enum sim_scenario {
 const char * SCENARIO_NAMES[SCENARIO_COUNT] = {"Empty", "Random", "Cloth", "Plinko", "Pool"};
 
 verlet_sim_t * new_simulation(enum sim_scenario scenario){
-    verlet_sim_t *sim = init_simulation(SQUARE, 1920/2, 1080/2, 1080/2, WINDOW_WIDTH, WINDOW_HEIGHT, GRID_WIDTH, GRID_HEIGHT, GRAV_X, GRAV_Y);
+    verlet_sim_t *sim = init_simulation(SQUARE, WINDOW_WIDTH/2, WINDOW_HEIGHT/2, WINDOW_HEIGHT/2, WINDOW_WIDTH, WINDOW_HEIGHT, GRID_WIDTH, GRID_HEIGHT, GRAV_X, GRAV_Y);
     assert(sim);
 
     switch (scenario)
@@ -117,7 +117,7 @@ verlet_sim_t * new_simulation(enum sim_scenario scenario){
     case SCENARIO_POOL:
         vector gravity = {.x = 0, .y = 0};
         sim_set_gravity(sim, gravity);
-        spawn_billard_triangle(sim, 1920/2, 1080/2, 11, 6);
+        spawn_billard_triangle(sim, WINDOW_WIDTH/2, WINDOW_HEIGHT/2, 11, 6);
         break;
     default:
         break;
