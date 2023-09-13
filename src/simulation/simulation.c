@@ -52,7 +52,7 @@ verlet_sim_t *init_simulation(enum constraint_shape shape, float constraint_cent
     s->constraint_center = vector_create(constraint_center_x, constraint_center_y);
     s->constraint_radius = constraint_radius;
 
-    s->space_grid = spacehash_init(width, height, 5., (float (*)(void*))circle_get_position_x, (float (*)(void*))circle_get_position_y);
+    s->space_grid = spacehash_init(width, height, 10., (float (*)(void*))circle_get_position_x, (float (*)(void*))circle_get_position_y);
     s->grid = create_grid(grid_width, grid_height);    
     s->height = height;
     s->width = width;
@@ -182,29 +182,56 @@ void *solve_cell_collisions(void * thread_data){
     verlet_sim_t *sim = arg_c->sim;
     // printf("thread %ld args = sim:%p, begin:%u, end:%u\n",  pthread_self(), arg_c->sim, arg_c->col_begin, arg_c->col_end);
     // printf("thread %ld working on %u to %u\n", pthread_self(), arg_c->col_begin, arg_c->col_end);
-    for (size_t x = arg_c->col_begin; x < arg_c->col_end; x++)
+    size_t max_circles = 5000;
+    size_t max_neighbors = 5000;
+    verlet_circle * bucket_circles[max_circles];
+    verlet_circle * neighbors_circle[max_circles];
+    size_t row_count = spacehash_get_row_count(sim->space_grid);
+    for (size_t col = arg_c->col_begin; col <= arg_c->col_end; col++)
     {
-        for (size_t y = 0; y < sim->grid->height; y++)
+        for (size_t row = 0; row < row_count; row++)
         {
-            // if (sim->grid->grid[y][x].count > 0) printf("%zu objects at cord %zu,%zu\n", sim->grid->grid[y][x].count, x, y);
-            // printf("thread %d working on %zu,%zu\n", pthread_self(), x, y);
-            for (size_t i = 0; i < sim->grid->grid[y][x].count; i++)
+            spacehash_query_bucket(sim->space_grid, row, col, (void **)bucket_circles, max_circles);
+
+            // For every circle in the bucket
+            for (size_t i = 0; i < max_circles && bucket_circles[i] != NULL; i++)
             {
-                for (int dx = -1; dx < 1; dx++)
+                spacehash_query_neighbors(sim->space_grid, bucket_circles[i], (void **)neighbors_circle, max_neighbors);
+
+                // For every neighboring circles
+                for (size_t j = 0; j < max_neighbors && neighbors_circle[j] != NULL; j++)
                 {
-                    if (x+dx > sim->grid->width) continue;
-                    for (int dy = -1; dy < 1; dy++)
-                    {
-                        if (y+dy > sim->grid->height) continue;
-                        for (size_t j = 0; j < sim->grid->grid[y + dy][x + dx].count; j++)
-                        {
-                            // printf("solving between grid %zu,%zu and %zu,%zu : c%zu and c%zu\n", y,x, y+dy, x+dx, i, j);
-                            solve_circle_collision(sim->circles + sim->grid->grid[y][x].array[i], sim->circles + sim->grid->grid[y + dy][x + dx].array[j]);                            
-                        }
-                    }
+                    solve_circle_collision(bucket_circles[i], neighbors_circle[j]);
                 }
             }
         }
+
+
+
+
+        // for (size_t y = 0; y < sim->grid->height; y++)
+        // {
+        //     // if (sim->grid->grid[y][x].count > 0) printf("%zu objects at cord %zu,%zu\n", sim->grid->grid[y][x].count, x, y);
+        //     // printf("thread %d working on %zu,%zu\n", pthread_self(), x, y);
+        //     for (size_t i = 0; i < sim->grid->grid[y][x].count; i++)
+        //     {
+
+                
+        //         for (int dx = -1; dx < 1; dx++)
+        //         {
+        //             if (x+dx > sim->grid->width) continue;
+        //             for (int dy = -1; dy < 1; dy++)
+        //             {
+        //                 if (y+dy > sim->grid->height) continue;
+        //                 for (size_t j = 0; j < sim->grid->grid[y + dy][x + dx].count; j++)
+        //                 {
+        //                     // printf("solving between grid %zu,%zu and %zu,%zu : c%zu and c%zu\n", y,x, y+dy, x+dx, i, j);
+        //                     solve_circle_collision(sim->circles + sim->grid->grid[y][x].array[i], sim->circles + sim->grid->grid[y + dy][x + dx].array[j]);                            
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
     }
     return NULL;
 }
@@ -229,8 +256,12 @@ void solve_threaded_collision(verlet_sim_t *sim){
     {
         struct arguments_collision *args = malloc(sizeof(struct arguments_collision));
         args->sim = sim;
-        args->col_begin = i * (sim->grid->width/thread_count);
-        args->col_end = ((i+1)*(sim->grid->width/thread_count));
+        args->col_begin = i * (spacehash_get_column_count(sim->space_grid) / thread_count);
+        args->col_end = ((i+1)*(spacehash_get_column_count(sim->space_grid) / thread_count)) - 1;
+        
+        // Take all the remaining columns in case of col_count%thread_count != 0
+        if (i == thread_count-1) args->col_end = spacehash_get_column_count(sim->space_grid) - 1;
+
         // printf("sending thread %zu with section %u to %u\n", i, args.col_begin, args.col_end);
         ret = pthread_create(threads+i, NULL, solve_cell_collisions, (void *) args);   
         if(ret) {
@@ -256,7 +287,7 @@ void seq_col(verlet_sim_t *sim){
     verlet_circle * neighbors[max_neighbors];
     for (size_t i = 0; i < sim->circle_count; i++)
     {
-        spacehash_query(sim->space_grid, &sim->circles[i], (void**)neighbors, max_neighbors);
+        spacehash_query_neighbors(sim->space_grid, &sim->circles[i], (void**)neighbors, max_neighbors);
         size_t j = 0;
         while(j < max_neighbors && neighbors[j] != NULL)
         {
@@ -406,8 +437,17 @@ void thread_col(verlet_sim_t *sim){
     gettimeofday(&end_time, NULL);
     time_spent = (end_time.tv_sec - start_time.tv_sec) + (end_time.tv_usec - start_time.tv_usec) / 1e3;
     printf("\tTime spent in collision resolution: %f microseconds\n", time_spent);
-    free(collisions);
+}
 
+void solve_naive(verlet_sim_t *sim){
+    for (size_t i = 0; i < sim->circle_count; i++)
+    {
+        for (size_t j = 0; j < sim->circle_count; j++)
+        {
+            solve_circle_collision(&sim->circles[i], &sim->circles[j]);
+        }
+    }
+    
 }
 
 void update_sticks(verlet_sim_t *sim, float sub_dt, bool right_to_left){
@@ -452,12 +492,12 @@ void update_simulation(verlet_sim_t *sim, float dt){
         gettimeofday(&start_time, NULL);
         // thread_col(sim);
         update_spatial_hashing(sim);
-        // solve_threaded_collision(sim);
-        seq_col(sim);
+        solve_threaded_collision(sim);
+        // seq_col(sim);
+        // solve_naive(sim);
         gettimeofday(&end_time, NULL);
         time_spent = (end_time.tv_sec - start_time.tv_sec) + (end_time.tv_usec - start_time.tv_usec) / 1e3;
         // printf("Time spent in collisions: %f microseconds\n", time_spent);
-     
 
 
         gettimeofday(&start_time, NULL);    
@@ -465,7 +505,7 @@ void update_simulation(verlet_sim_t *sim, float dt){
         gettimeofday(&end_time, NULL);
         time_spent = (end_time.tv_sec - start_time.tv_sec) + (end_time.tv_usec - start_time.tv_usec) / 1e3;
         // printf("Time spent in update positions: %f microseconds\n", time_spent);
-
+    
         update_sticks(sim, sub_dt, ((i%2)==0));
     }
     sim->total_frames++;
@@ -491,9 +531,9 @@ verlet_circle * add_circle(verlet_sim_t *sim, uint radius, float px, float py, c
     sim->circle_count += 1;
 
     // Update the spatial hashing width if the new circle have the biggest radius 
-    if (new_circle->radius > sim->biggest_circle_radius && new_circle->radius > 5){
+    if (new_circle->radius > sim->biggest_circle_radius && new_circle->radius > 10){
         sim->biggest_circle_radius = new_circle->radius;
-        spacehash_update_cell_width(&sim->space_grid, 1.2*new_circle->radius);
+        spacehash_update_cell_width(&sim->space_grid, 2*new_circle->radius);
     }
 
     // Pointer on the circle 
