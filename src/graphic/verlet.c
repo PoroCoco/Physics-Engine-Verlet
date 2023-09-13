@@ -33,8 +33,8 @@ void spawn_random_sticks(verlet_sim_t *sim, size_t count, int height, int width,
 void spawn_cloth(verlet_sim_t *sim, float spread, int cols, int rows){
     float start_x = 600.0;
     float start_y = 200.0;
-    for (size_t i = 0; i < rows; i++){
-        for (size_t j = 0; j < cols; j++){
+    for (int i = 0; i < rows; i++){
+        for (int j = 0; j < cols; j++){
             add_circle(sim, CIRCLE_RADIUS, start_x + j*spread, start_y + i*spread, rainbow_color(sim_get_object_count(sim)), 0, 0, (i==0 && j == 0) || (i == 0  && j == cols-1));
         }
     }
@@ -98,7 +98,7 @@ enum sim_scenario {
 const char * SCENARIO_NAMES[SCENARIO_COUNT] = {"Empty", "Random", "Cloth", "Plinko", "Pool"};
 
 verlet_sim_t * new_simulation(enum sim_scenario scenario){
-    verlet_sim_t *sim = init_simulation(SQUARE, WINDOW_WIDTH/2, WINDOW_HEIGHT/2, WINDOW_HEIGHT/2, WINDOW_WIDTH, WINDOW_HEIGHT, GRID_WIDTH, GRID_HEIGHT, GRAV_X, GRAV_Y);
+    verlet_sim_t *sim = init_simulation(SQUARE, WINDOW_WIDTH/2, WINDOW_HEIGHT/2, WINDOW_HEIGHT/2, WINDOW_WIDTH, WINDOW_HEIGHT, GRAV_X, GRAV_Y);
     assert(sim);
 
     switch (scenario)

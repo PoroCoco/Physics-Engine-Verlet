@@ -124,7 +124,6 @@ void spacehash_query_neighbors(sp_grid* g, void *element, void **neighbors, size
     neighbors[0] = NULL;
     for (int x = -1; x < 2; x++){
         for (int y = -1; y < 2; y++){
-            size_t cell_elements_index = 0;
             int transform_col = col + x;
             int transform_row = row + y;
             if (transform_col >= (int)g->col_count) transform_col = g->col_count - 1; 

@@ -7,8 +7,6 @@
 #define CONSTRAINT_CENTER_X 0.
 #define CONSTRAINT_CENTER_Y 0.
 #define CONSTRAINT_RADIUS 1.
-#define GRID_WIDTH 72
-#define GRID_HEIGHT 72
 #define GRAV_X 0
 #define GRAV_Y 1000
 

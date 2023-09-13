@@ -10,7 +10,6 @@
 #include "error_handler.h"
 #include "misc.h"
 #include "circle_verlet.h"
-#include "grid.h"
 #include "sticks.h"
 #include "spatial_hashing.h"
 
@@ -21,7 +20,6 @@ typedef struct verlet_sim {
     size_t stick_count;
     stick sticks[SIM_MAX_STICKS];
 
-    struct grid *grid;
     sp_grid* space_grid;
     uint biggest_circle_radius;
     vector constraint_center;
@@ -40,7 +38,7 @@ typedef struct verlet_sim {
 
 
 
-verlet_sim_t *init_simulation(enum constraint_shape shape, float constraint_center_x, float constraint_center_y, unsigned int constraint_radius, unsigned int width, unsigned int height, unsigned int grid_width, unsigned int grid_height, int grav_x, int grav_y){
+verlet_sim_t *init_simulation(enum constraint_shape shape, float constraint_center_x, float constraint_center_y, unsigned int constraint_radius, unsigned int width, unsigned int height, int grav_x, int grav_y){
     verlet_sim_t *s = malloc(sizeof(verlet_sim_t));
     _check_malloc(s, __LINE__, __FILE__);
     
@@ -53,7 +51,6 @@ verlet_sim_t *init_simulation(enum constraint_shape shape, float constraint_cent
     s->constraint_radius = constraint_radius;
 
     s->space_grid = spacehash_init(width, height, 10., (float (*)(void*))circle_get_position_x, (float (*)(void*))circle_get_position_y);
-    s->grid = create_grid(grid_width, grid_height);    
     s->height = height;
     s->width = width;
     s->biggest_circle_radius = 0;
@@ -69,7 +66,6 @@ void destroy_simulation(verlet_sim_t *s){
     if (!s) return;
     // if (s->circles) free(s->circles);
     // if (s->sticks) free(s->sticks);
-    if (s->grid) destroy_grid(s->grid);
     if (s->space_grid) spacehash_free(s->space_grid);
     free(s);
 }
@@ -205,33 +201,6 @@ void *solve_cell_collisions(void * thread_data){
                 }
             }
         }
-
-
-
-
-        // for (size_t y = 0; y < sim->grid->height; y++)
-        // {
-        //     // if (sim->grid->grid[y][x].count > 0) printf("%zu objects at cord %zu,%zu\n", sim->grid->grid[y][x].count, x, y);
-        //     // printf("thread %d working on %zu,%zu\n", pthread_self(), x, y);
-        //     for (size_t i = 0; i < sim->grid->grid[y][x].count; i++)
-        //     {
-
-                
-        //         for (int dx = -1; dx < 1; dx++)
-        //         {
-        //             if (x+dx > sim->grid->width) continue;
-        //             for (int dy = -1; dy < 1; dy++)
-        //             {
-        //                 if (y+dy > sim->grid->height) continue;
-        //                 for (size_t j = 0; j < sim->grid->grid[y + dy][x + dx].count; j++)
-        //                 {
-        //                     // printf("solving between grid %zu,%zu and %zu,%zu : c%zu and c%zu\n", y,x, y+dy, x+dx, i, j);
-        //                     solve_circle_collision(sim->circles + sim->grid->grid[y][x].array[i], sim->circles + sim->grid->grid[y + dy][x + dx].array[j]);                            
-        //                 }
-        //             }
-        //         }
-        //     }
-        // }
     }
     return NULL;
 }
@@ -575,12 +544,12 @@ unsigned int sim_get_constraint_radius(verlet_sim_t *sim){
     return sim->constraint_radius;
 }
 
-unsigned int sim_get_grid_height(verlet_sim_t *sim){
-    return sim->grid->height;
+size_t sim_get_grid_row_count(verlet_sim_t *sim){
+    return spacehash_get_row_count(sim->space_grid);
 }
 
-unsigned int sim_get_grid_width(verlet_sim_t *sim){
-    return sim->grid->width;
+size_t sim_get_grid_col_count(verlet_sim_t *sim){
+    return spacehash_get_column_count(sim->space_grid);
 }
 
 verlet_circle *sim_get_nth_circle(verlet_sim_t *sim, unsigned int n){

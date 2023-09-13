@@ -14,7 +14,7 @@ enum constraint_shape {
 typedef struct verlet_sim verlet_sim_t;
 
 
-verlet_sim_t *init_simulation(enum constraint_shape shape, float constraint_center_x, float constraint_center_y, unsigned int constraint_radius, unsigned int width, unsigned int height, unsigned int grid_width, unsigned int grid_height, int grav_x, int grav_y);
+verlet_sim_t *init_simulation(enum constraint_shape shape, float constraint_center_x, float constraint_center_y, unsigned int constraint_radius, unsigned int width, unsigned int height, int grav_x, int grav_y);
 
 void update_simulation(verlet_sim_t *sim, float dt);
 
@@ -36,9 +36,10 @@ void sim_set_sub_steps(verlet_sim_t *sim, unsigned int sub_steps);
 
 void sim_set_thread_count(verlet_sim_t *sim, unsigned int thread_count);
 
-unsigned int sim_get_grid_height(verlet_sim_t *sim);
 
-unsigned int sim_get_grid_width(verlet_sim_t *sim);
+size_t sim_get_grid_row_count(verlet_sim_t *sim);
+
+size_t sim_get_grid_col_count(verlet_sim_t *sim);
 
 unsigned int sim_get_width(verlet_sim_t *sim);
 
