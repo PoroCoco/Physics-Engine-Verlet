@@ -1,5 +1,5 @@
 # c-verlet-simulation
-My implementation of a verlet simulation in C .    
+My implementation of a basic physics engine using verlet simulation in C.    
 
 ![Alt Text](./images/verlet.gif)
 
@@ -7,10 +7,6 @@ My implementation of a verlet simulation in C .
 You'll need to have the SDL2 library installed. The main branch is WIP. 
 
     mkdir build && cd build && cmake .. && make 
-
-# TO DO
-
-- Improve simulation performances
 
 # Credits
 - SDL2 : https://www.libsdl.org/
