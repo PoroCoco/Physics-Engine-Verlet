@@ -12,6 +12,7 @@
 #include "circle_verlet.h"
 #include "sticks.h"
 #include "spatial_hashing.h"
+#include "simd.h"
 
 typedef struct verlet_sim {
     size_t circle_count;
@@ -157,11 +158,11 @@ void solve_circle_collision(verlet_circle *c1, verlet_circle *c2){
             c2->position_current.x -= 0.5 * delta * n.x;
             c2->position_current.y -= 0.5 * delta * n.y;
         }else if (c1->pinned && !c2->pinned){
-            c2->position_current.x -= 1.0 * delta * n.x;
-            c2->position_current.y -= 1.0 * delta * n.y;
+            c2->position_current.x -= delta * n.x;
+            c2->position_current.y -= delta * n.y;
         }else{
-            c1->position_current.x -= 1.0 * delta * n.x;
-            c1->position_current.y -= 1.0 * delta * n.y;
+            c1->position_current.x -= delta * n.x;
+            c1->position_current.y -= delta * n.y;
         }
     }
 }
@@ -448,14 +449,14 @@ void update_simulation(verlet_sim_t *sim, float dt){
         apply_gravity(sim);
         gettimeofday(&end_time, NULL); 
         time_spent = (end_time.tv_sec - start_time.tv_sec) + (end_time.tv_usec - start_time.tv_usec) / 1e3;
-        // printf("Time spent in apply gravity: %f microseconds\n", time_spent);
+        // printf("Time spent in apply gravity: %f milliseconds\n", time_spent);
         
 
         gettimeofday(&start_time, NULL);    
         apply_constraint(sim);
         gettimeofday(&end_time, NULL);
         time_spent = (end_time.tv_sec - start_time.tv_sec) + (end_time.tv_usec - start_time.tv_usec) / 1e3;
-        // printf("Time spent in apply constraint: %f microseconds\n", time_spent);
+        // printf("Time spent in apply constraint: %f milliseconds\n", time_spent);
      
      
         gettimeofday(&start_time, NULL);
@@ -464,23 +465,25 @@ void update_simulation(verlet_sim_t *sim, float dt){
         solve_threaded_collision(sim);
         // seq_col(sim);
         // solve_naive(sim);
+        // simd_solve_seq(sim);
         gettimeofday(&end_time, NULL);
         time_spent = (end_time.tv_sec - start_time.tv_sec) + (end_time.tv_usec - start_time.tv_usec) / 1e3;
-        // printf("Time spent in collisions: %f microseconds\n", time_spent);
+        // printf("Time spent in collisions: %f milliseconds\n", time_spent);
 
 
         gettimeofday(&start_time, NULL);    
         update_positions(sim, sub_dt);
         gettimeofday(&end_time, NULL);
         time_spent = (end_time.tv_sec - start_time.tv_sec) + (end_time.tv_usec - start_time.tv_usec) / 1e3;
-        // printf("Time spent in update positions: %f microseconds\n", time_spent);
+        // printf("Time spent in update positions: %f milliseconds\n", time_spent);
     
         update_sticks(sim, sub_dt, ((i%2)==0));
     }
     sim->total_frames++;
     gettimeofday(&total_end_time, NULL);    
-    time_spent = (total_end_time.tv_sec - total_start_time.tv_sec) + (total_end_time.tv_usec - total_start_time.tv_usec) / 1e3;
-    printf("Simulation frametime : %f microseconds\n", time_spent);  
+    long long int time_spent_usec = (total_end_time.tv_sec - total_start_time.tv_sec) * 1000000LL + (total_end_time.tv_usec - total_start_time.tv_usec);
+    double time_spent_ms = time_spent_usec / 1e3;
+    // printf("Simulation frametime : %f milliseconds\n", time_spent_ms);
 
 }
 

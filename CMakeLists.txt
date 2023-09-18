@@ -9,7 +9,7 @@ project("Verlet" C CXX)
 
 
 set(CMAKE_C_FLAGS "-std=c99 -Wall -pthread -Wextra -Wunused-parameter -Wstrict-prototypes")
-set(CMAKE_C_FLAGS_DEBUG "-g")    # use CMake option: -DCMAKE_BUILD_TYPE=DEBUG
+set(CMAKE_C_FLAGS_DEBUG "-g -pg -mavx ")    # use CMake option: -DCMAKE_BUILD_TYPE=DEBUG
 set(CMAKE_C_FLAGS_RELEASE "-O3 -DNDEBUG")   # use CMake option: -DCMAKE_BUILD_TYPE=RELEASE
 
 
@@ -70,14 +70,15 @@ include_directories(cimgui/generator/output/)
 
 
 add_executable(verlet_circle src/simulation/circle_verlet.c src/graphic/verlet.c src/graphic/graphics.c src/simulation/error_handler.c)
+add_executable(main test/main.c)
 
 target_compile_definitions(verlet_circle PUBLIC -DCIMGUI_USE_OPENGL3 -DCIMGUI_USE_SDL2)
 
-
-add_library(verlet src/simulation/error_handler.c src/simulation/circle_verlet.c src/simulation/simulation.c src/simulation/color.c src/simulation/save.c src/simulation/sticks.c src/simulation/spatial_hashing.c)
+add_library(verlet src/simulation/error_handler.c src/simulation/circle_verlet.c src/simulation/simulation.c src/simulation/color.c src/simulation/save.c src/simulation/sticks.c src/simulation/spatial_hashing.c src/simulation/simd.c)
 
 target_link_libraries(verlet m pthread)
 target_link_libraries(verlet_circle ${SDL2_ALL_LIBS} m verlet ${IMGUI_SDL_LIBRARY} cimgui_sdl)
+target_link_libraries(main verlet)
 
 
 ############################ TESTS TMP ############################

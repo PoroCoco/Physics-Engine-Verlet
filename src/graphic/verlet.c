@@ -16,7 +16,7 @@
 void spawn_random_circles(verlet_sim_t *sim, size_t count, int height, int width){
     int left_padding = sim_get_constraint_x(sim) - sim_get_constraint_radius(sim);
     for (size_t i = 0; i < count; i++)
-        add_circle(sim, 3, left_padding + rand()%width, rand()%height, rainbow_color(sim_get_object_count(sim)), 0, 0, false);
+        add_circle(sim, 2, left_padding + rand()%width, rand()%height, rainbow_color(sim_get_object_count(sim)), 0, 0, false);
 }
 
 void spawn_random_sticks(verlet_sim_t *sim, size_t count, int height, int width, size_t knots){

@@ -5,7 +5,7 @@
 
 #include "spatial_hashing.h"
 
-#define MAX_ELEMENTS_IN_CELL 2000
+#define MAX_ELEMENTS_IN_CELL 10000
 
 struct spacehash_grid {
     float width;
@@ -153,9 +153,9 @@ void spacehash_query_neighbors(sp_grid* g, void *element, void **neighbors, size
 
 void spacehash_query_bucket(sp_grid* g, size_t row, size_t col, void **elements, size_t max_elements){
     if (max_elements == 0) return;
+    elements[0] = NULL;
     assert(row <= g->row_count);
     assert(col <= g->col_count);
-    elements[0] = NULL;
     if (row > g->row_count) return;
     if (col > g->col_count) return;
 

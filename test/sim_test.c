@@ -25,7 +25,7 @@ int main(int argc, char const *argv[])
 {
     argc = argc;
     argv = argv;
-    verlet_sim_t *sim = init_simulation(SQUARE, 1920/2, 1080/2, 1080/2, WINDOW_WIDTH, WINDOW_HEIGHT, GRID_WIDTH, GRID_HEIGHT, GRAV_X, GRAV_Y);
+    verlet_sim_t *sim = init_simulation(SQUARE, 1920/2, 1080/2, 1080/2, WINDOW_WIDTH, WINDOW_HEIGHT, GRAV_X, GRAV_Y);
     spawn_random_circles(sim, 1000, WINDOW_HEIGHT, WINDOW_WIDTH);
     // spawn_random_sticks(sim, 100, WINDOW_HEIGHT, WINDOW_WIDTH);
 

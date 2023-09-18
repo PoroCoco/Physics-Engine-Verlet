@@ -13,7 +13,7 @@ void spawn_random_circles(verlet_sim_t *sim, size_t count, int height, int width
 void verlet_standard_config(void){
     verlet_sim_t * reference = sim_load_file("../test/test_save.data");
 
-    verlet_sim_t *s = init_simulation(SQUARE, 1920/2, 1080/2, 1080/2, WINDOW_WIDTH, WINDOW_HEIGHT, GRID_WIDTH, GRID_HEIGHT, GRAV_X, GRAV_Y);
+    verlet_sim_t *s = init_simulation(SQUARE, 1920/2, 1080/2, 1080/2, WINDOW_WIDTH, WINDOW_HEIGHT, GRAV_X, GRAV_Y);
     spawn_random_circles(s, 1000, WINDOW_HEIGHT, WINDOW_WIDTH);
 
     for (size_t i = 0; i < 300; i++)
